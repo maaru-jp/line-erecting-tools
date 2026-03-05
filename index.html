@@ -145,24 +145,6 @@
       font-family: var(--font-sans);
       font-size: 0.9rem;
     }
-    .logo-input-wrap { display: flex; align-items: center; gap: 0.5rem; flex: 1; flex-wrap: wrap; }
-    .logo-input-wrap input[type="text"] { flex: 1; min-width: 120px; }
-    .upload-logo-btn {
-      display: inline-block;
-      padding: 0.4rem 0.75rem;
-      background: var(--card);
-      border: 1px solid var(--teal);
-      color: var(--teal);
-      border-radius: var(--radius-sm);
-      font-size: 0.85rem;
-      cursor: pointer;
-    }
-    .upload-logo-btn:hover { background: var(--teal-soft); }
-    .logo-preview-wrap { margin-left: 0.5rem; align-self: center; display: inline-flex; align-items: center; gap: 0.35rem; }
-    .logo-preview-wrap img { max-height: 36px; max-width: 120px; object-fit: contain; vertical-align: middle; }
-    .clear-logo-btn { padding: 0.2rem 0.5rem; font-size: 0.75rem; background: transparent; border: 1px solid var(--border); border-radius: var(--radius-sm); color: #666; cursor: pointer; }
-    .clear-logo-btn:hover { background: #f5f5f5; color: #333; }
-    .logo-hint { margin-top: 0.25rem; margin-bottom: 0; font-size: 0.85rem; }
 
     textarea {
       width: 100%;
@@ -376,15 +358,6 @@
           <input type="text" id="optShipping" placeholder="例：0 或 60" value="0" />
         </div>
         <div class="template-row">
-          <label>品牌 Logo</label>
-          <span class="logo-input-wrap">
-            <input type="text" id="optLogoUrl" placeholder="https://res.cloudinary.com/dtll13zax/image/upload/v1772375369/%E5%93%81%E7%89%8Clogo_eheujn.jpg" />
-            <label class="upload-logo-btn">上傳圖片<input type="file" id="optLogoFile" accept="image/*" style="display:none" /></label>
-          </span>
-          <span id="logoPreviewWrap" class="logo-preview-wrap" style="display:none;"><img id="logoPreview" alt="Logo" style="max-height:36px;" /><button type="button" class="clear-logo-btn" id="clearLogoBtn" title="清除已儲存的 Logo">清除</button></span>
-        </div>
-        <p class="hint logo-hint">若將 <strong>index.html</strong> 與 logo 圖片（如 <strong>logo.png</strong>）一起上傳到 GitHub 同目錄，在此填 <strong>logo.png</strong> 並用 GitHub Pages 開啟頁面，一鍵產生 PDF 即可自動套用，不需每次上傳。</p>
-        <div class="template-row">
           <label>取貨門市</label>
           <input type="text" id="optStore" placeholder="例：博愛門市、7-11 某某門市" />
         </div>
@@ -428,14 +401,13 @@
       </div>
       <div class="result-card customer-summary-card" id="customerSummaryCard" style="display: none;">
         <h2><span class="icon">📄</span>給客人明細（模板）</h2>
-        <p class="template-desc">依上方「給客人明細」設定（團名、日期、訂單編號、訂金、運費、Logo、取貨門市）與統計結果，一鍵複製文字或產生 PDF 給客人。</p>
+        <p class="template-desc">依上方「給客人明細」設定（團名、日期、訂單編號、訂金、運費、取貨門市）；Logo 自動讀取同目錄 logo.png（已上傳 GitHub 即可）與統計結果，一鍵複製文字或產生 PDF 給客人。</p>
         <div class="body template-preview-box" id="customerSummaryPreview">
           <p class="no-data">—</p>
         </div>
         <div class="copy-wrap template-actions" id="customerSummaryWrap">
           <button type="button" class="copy-btn copy-btn-full" id="copyFullTemplateBtn">📋 一鍵複製給客人明細</button>
           <button type="button" class="copy-btn copy-btn-pdf" id="generatePdfBtn">📎 一鍵產生 PDF</button>
-          <button type="button" class="copy-btn" id="copySheetDataBtn">📊 複製訂單資料（貼上 Google 試算表）</button>
         </div>
       </div>
       <div class="result-card">
@@ -952,12 +924,11 @@
         var pdfOrderIdNum = parseInt(String(pdfOrderIdStart).replace(/\D/g, ''), 10) || 100;
         var pdfOrderIdPad = Math.max(5, (String(pdfOrderIdStart).replace(/\D/g, '') || '').length);
         function padOrderIdPdf(n) { var s = String(n); while (s.length < pdfOrderIdPad) s = '0' + s; return s; }
-        var pdfLogo = window._logoDataUrl || (document.getElementById('optLogoUrl') && document.getElementById('optLogoUrl').value.trim()) || '';
         var pdfStore = (document.getElementById('optStore') && document.getElementById('optStore').value.trim()) || '';
         var pdfStoreAddr = (document.getElementById('optStoreAddr') && document.getElementById('optStoreAddr').value.trim()) || '';
         var pdfShipDateEl = document.getElementById('optShipDate');
         var pdfShipDateStr = (pdfShipDateEl && pdfShipDateEl.value) ? pdfShipDateEl.value.replace(/-/g, '/') : '';
-        window._lastPdfData = { perPerson: perPerson, title: pdfTitle, dateStr: pdfDateStr, orderIdNum: pdfOrderIdNum, padOrderId: padOrderIdPdf, defaultDeposit: pdfDefaultDeposit, shippingNum: pdfShippingNum, logoDataUrl: pdfLogo, storeName: pdfStore, storeAddr: pdfStoreAddr, shipDateStr: pdfShipDateStr };
+        window._lastPdfData = { perPerson: perPerson, title: pdfTitle, dateStr: pdfDateStr, orderIdNum: pdfOrderIdNum, padOrderId: padOrderIdPdf, defaultDeposit: pdfDefaultDeposit, shippingNum: pdfShippingNum, storeName: pdfStore, storeAddr: pdfStoreAddr, shipDateStr: pdfShipDateStr };
 
         // 每人訂單（含賣貨便運費、應付總計）
         if (perPersonBody) perPersonBody.innerHTML = renderTable(
@@ -1090,20 +1061,16 @@
       var TEMPLATE_STORAGE_KEY = 'line_order_tool_template';
       function saveTemplateOptions() {
         try {
-          var logoData = (typeof window._logoDataUrl === 'string' && window._logoDataUrl) ? window._logoDataUrl : '';
-          if (logoData.length > 450000) logoData = '';
           var o = {
             title: (document.getElementById('optTitle') && document.getElementById('optTitle').value) || '',
             date: (document.getElementById('optDate') && document.getElementById('optDate').value) || '',
             orderId: (document.getElementById('optOrderId') && document.getElementById('optOrderId').value) || '',
             deposit: (document.getElementById('optDeposit') && document.getElementById('optDeposit').value) || '',
             shipping: (document.getElementById('optShipping') && document.getElementById('optShipping').value) || '',
-            logoUrl: (document.getElementById('optLogoUrl') && document.getElementById('optLogoUrl').value) || '',
             store: (document.getElementById('optStore') && document.getElementById('optStore').value) || '',
             storeAddr: (document.getElementById('optStoreAddr') && document.getElementById('optStoreAddr').value) || '',
             shipDate: (document.getElementById('optShipDate') && document.getElementById('optShipDate').value) || '',
             sheetUrl: (document.getElementById('optSheetUrl') && document.getElementById('optSheetUrl').value) || '',
-            logoDataUrl: logoData
           };
           localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(o));
         } catch (e) {}
@@ -1119,17 +1086,10 @@
           if (o.orderId && (el = document.getElementById('optOrderId'))) el.value = o.orderId;
           if (o.deposit != null && (el = document.getElementById('optDeposit'))) el.value = o.deposit;
           if (o.shipping != null && (el = document.getElementById('optShipping'))) el.value = o.shipping;
-          if (o.logoUrl != null && (el = document.getElementById('optLogoUrl'))) el.value = o.logoUrl;
           if (o.store != null && (el = document.getElementById('optStore'))) el.value = o.store;
           if (o.storeAddr != null && (el = document.getElementById('optStoreAddr'))) el.value = o.storeAddr;
           if (o.shipDate != null && (el = document.getElementById('optShipDate'))) el.value = o.shipDate;
           if (o.sheetUrl != null && (el = document.getElementById('optSheetUrl'))) el.value = o.sheetUrl;
-          if (o.logoDataUrl) {
-            window._logoDataUrl = o.logoDataUrl;
-            var wrap = document.getElementById('logoPreviewWrap');
-            var img = document.getElementById('logoPreview');
-            if (wrap && img) { img.src = o.logoDataUrl; wrap.style.display = 'inline-block'; }
-          }
         } catch (e) {}
       }
       (function setDefaultDate() {
@@ -1141,60 +1101,10 @@
       })();
       loadTemplateOptions();
 
-      ['optTitle', 'optDate', 'optOrderId', 'optDeposit', 'optShipping', 'optLogoUrl', 'optStore', 'optStoreAddr', 'optShipDate', 'optSheetUrl'].forEach(function (id) {
+      ['optTitle', 'optDate', 'optOrderId', 'optDeposit', 'optShipping', 'optStore', 'optStoreAddr', 'optShipDate', 'optSheetUrl'].forEach(function (id) {
         var el = document.getElementById(id);
         if (el) el.addEventListener('change', saveTemplateOptions);
       });
-      (function initLogoUpload() {
-        var fileEl = document.getElementById('optLogoFile');
-        var urlEl = document.getElementById('optLogoUrl');
-        var previewWrap = document.getElementById('logoPreviewWrap');
-        var previewImg = document.getElementById('logoPreview');
-        if (fileEl) fileEl.addEventListener('change', function () {
-          var f = this.files && this.files[0];
-          if (!f || !f.type.match(/^image\//)) return;
-          var r = new FileReader();
-          r.onload = function () {
-            window._logoDataUrl = r.result;
-            if (urlEl) urlEl.value = '';
-            if (previewImg) previewImg.src = r.result;
-            if (previewWrap) previewWrap.style.display = 'inline-block';
-            saveTemplateOptions();
-          };
-          r.readAsDataURL(f);
-        });
-        if (urlEl && previewImg && previewWrap) {
-          urlEl.addEventListener('input', function () {
-            var v = this.value.trim();
-            if (v) {
-              window._logoDataUrl = '';
-              saveTemplateOptions();
-              previewImg.src = v;
-              previewImg.onerror = function () { previewWrap.style.display = 'none'; };
-              previewImg.onload = function () { previewWrap.style.display = 'inline-block'; };
-              if (v.startsWith('data:')) previewWrap.style.display = 'inline-block';
-            } else {
-              previewWrap.style.display = 'none';
-              saveTemplateOptions();
-            }
-          });
-          if (urlEl.value.trim()) {
-            previewImg.src = urlEl.value.trim();
-            previewImg.onload = function () { previewWrap.style.display = 'inline-block'; };
-            previewImg.onerror = function () {};
-            if (urlEl.value.trim().startsWith('data:')) previewWrap.style.display = 'inline-block';
-          }
-        }
-        var clearLogoBtn = document.getElementById('clearLogoBtn');
-        if (clearLogoBtn) clearLogoBtn.addEventListener('click', function () {
-          window._logoDataUrl = '';
-          if (urlEl) urlEl.value = '';
-          if (previewWrap) previewWrap.style.display = 'none';
-          if (previewImg) previewImg.src = '';
-          saveTemplateOptions();
-        });
-      })();
-
       if (parseBtn) parseBtn.addEventListener('click', run);
       var autoRunTimer;
       if (rawEl) {
@@ -1275,20 +1185,6 @@
         return { title: title, header: header, rows: rows, tsv: tsv };
       }
 
-      document.getElementById('copySheetDataBtn').addEventListener('click', function () {
-        var data = window._lastPdfData;
-        var built = buildSheetDataFromPdfData(data);
-        if (!built.tsv) {
-          alert('請先貼上喊單並完成統計');
-          return;
-        }
-        navigator.clipboard.writeText(built.tsv).then(function () {
-          this.textContent = '✓ 已複製！請到 Google 試算表貼上';
-          var btn = this;
-          setTimeout(function () { btn.textContent = '📊 複製訂單資料（貼上 Google 試算表）'; }, 2500);
-        }.bind(this)).catch(function () { alert('無法複製，請手動選取複製'); });
-      });
-
       document.getElementById('generatePdfBtn').addEventListener('click', function () {
         var data = window._lastPdfData;
         if (!data || !data.perPerson || data.perPerson.length === 0) {
@@ -1302,10 +1198,10 @@
         var shippingNum = data.shippingNum || 0;
         var orderIdNum = data.orderIdNum;
         var padOrderId = data.padOrderId;
-        var logoSrc = (data.logoDataUrl || '').trim();
         var storeName = (data.storeName || '').trim();
         var storeAddr = (data.storeAddr || '').trim();
         var shipDateStr = (data.shipDateStr || '').trim();
+        var logoSrc = 'logo.png';
         var pdfPageStyle = 'width:100%;border-collapse:collapse;font-family:Microsoft JhengHei,sans-serif;font-size:11pt;color:#333;';
         var pdfThStyle = 'background:#4a4a4a;color:#fff;padding:8px 10px;text-align:left;font-weight:bold;border:1px solid #333;';
         var pdfTdStyle = 'padding:6px 10px;border:1px solid #ddd;';
