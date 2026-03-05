@@ -1322,7 +1322,14 @@
         btn.textContent = '產生中…';
         btn.disabled = true;
         var filename = (title.replace(/[/\\?%*:|"<>]/g, '_') || '購買明細') + '_購買明細.pdf';
-        var pdfOpts = { margin: 0, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 1.5, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+        var pdfOpts = {
+          margin: 8,
+          filename: filename,
+          image: { type: 'jpeg', quality: 0.95 },
+          html2canvas: { scale: 1.5, useCORS: true },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+          pagebreak: { mode: ['css', 'legacy'], before: '.pdf-page-break-before', after: '.pdf-page-break-after' }
+        };
 
         function cleanup() {
           var w = document.getElementById('pdfTempWrap');
@@ -1338,69 +1345,43 @@
             return new Promise(function (resolve) {
               img.onload = resolve;
               img.onerror = resolve;
-              setTimeout(resolve, 3000);
+              setTimeout(resolve, 4000);
             });
           });
           return Promise.all(arr);
         }
 
-        (function runPageByPage(idx, pdfInst) {
-          if (idx >= pageHtmls.length) {
-            if (pdfInst) pdfInst.save(filename);
-            cleanup();
-            return;
-          }
-          var wrap = document.createElement('div');
-          wrap.id = 'pdfTempWrap';
-          wrap.setAttribute('style', 'position:fixed;left:0;top:0;width:794px;height:1123px;overflow:visible;background:#fff;padding:24px;box-sizing:border-box;z-index:99999;font-family:Microsoft JhengHei,sans-serif;');
-          wrap.innerHTML = pageHtmls[idx];
-          document.body.appendChild(wrap);
+        var fullHtml = pageHtmls.map(function (h) {
+          return h.replace(/page-break-after:always/g, 'page-break-after: always').replace(/<div style="/, '<div class="pdf-page-break-after" style="');
+        }).join('');
+        var wrap = document.createElement('div');
+        wrap.id = 'pdfTempWrap';
+        wrap.setAttribute('style', 'position:fixed;left:0;top:0;width:794px;background:#fff;padding:0;box-sizing:border-box;z-index:99999;font-family:Microsoft JhengHei,sans-serif;');
+        wrap.innerHTML = fullHtml;
+        document.body.appendChild(wrap);
 
-          waitForImgs(wrap).then(function () {
-            return new Promise(function (r) { requestAnimationFrame(function () { setTimeout(r, 400); }); });
-          }).then(function () {
-            var el = document.getElementById('pdfTempWrap');
-            if (!el) { cleanup(); return; }
-            el.scrollIntoView({ block: 'start', behavior: 'auto' });
-            var forceReflow = el.offsetHeight;
-            return html2pdf().set(pdfOpts).from(el).toCanvas().get('canvas').then(function (canvas) {
-              var imgData = canvas.toDataURL('image/jpeg', 0.98);
-              var pdf = pdfInst;
-              if (idx === 0) {
-                var jsPDF = (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : (window.jsPDF || null);
-                if (jsPDF) {
-                  pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
-                  pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
-                  if (el.parentNode) el.parentNode.removeChild(el);
-                  runPageByPage(idx + 1, pdf);
-                } else {
-                  return html2pdf().set(pdfOpts).from(el).toPdf().get('pdf').then(function (p) {
-                    if (el.parentNode) el.parentNode.removeChild(el);
-                    runPageByPage(idx + 1, p);
-                  });
-                }
-              } else {
-                pdfInst.addPage('a4', 'portrait');
-                pdfInst.addImage(imgData, 'JPEG', 0, 0, 210, 297);
-                if (el.parentNode) el.parentNode.removeChild(el);
-                runPageByPage(idx + 1, pdfInst);
-              }
-            }).catch(function (canvasErr) {
-              if (idx === 0) {
-                return html2pdf().set(pdfOpts).from(el).toPdf().get('pdf').then(function (pdf) {
-                  if (el.parentNode) el.parentNode.removeChild(el);
-                  runPageByPage(idx + 1, pdf);
-                });
-              }
-              if (el.parentNode) el.parentNode.removeChild(el);
-              runPageByPage(idx + 1, pdfInst);
+        waitForImgs(wrap).then(function () {
+          return new Promise(function (r) { requestAnimationFrame(function () { setTimeout(r, 500); }); });
+        }).then(function () {
+          var el = document.getElementById('pdfTempWrap');
+          if (!el) { cleanup(); return; }
+          el.scrollIntoView({ block: 'start', behavior: 'auto' });
+          var h = el.offsetHeight;
+          if (typeof html2pdf !== 'undefined') {
+            html2pdf().set(pdfOpts).from(el).save().then(cleanup).catch(function (err) {
+              cleanup();
+              console.error('html2pdf error', err);
+              alert('產生 PDF 時發生錯誤：' + (err && err.message ? err.message : '請再試一次'));
             });
-          }).catch(function (err) {
+          } else {
             cleanup();
-            console.error(err);
-            alert('產生 PDF 時發生錯誤，請再試一次');
-          });
-        })(0, null);
+            alert('產生 PDF 時發生錯誤：未載入 html2pdf');
+          }
+        }).catch(function (err) {
+          cleanup();
+          console.error(err);
+          alert('產生 PDF 時發生錯誤，請再試一次');
+        });
       });
 
       function escapeHtml(s) {
