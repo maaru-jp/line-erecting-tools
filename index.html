@@ -145,6 +145,8 @@
       font-family: var(--font-sans);
       font-size: 0.9rem;
     }
+    .template-row label.checkbox-label { min-width: 0; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
+    .template-row label.checkbox-label input[type="checkbox"] { flex: none; width: auto; }
 
     textarea {
       width: 100%;
@@ -257,6 +259,8 @@
     }
     .copy-btn-pdf:hover { background: #e0d0e8; }
     .customer-summary-card .template-desc { font-size: 0.9rem; color: var(--muted); margin: 0 0 0.75rem 0; line-height: 1.4; }
+    .sheet-hint { margin-top: 0.35rem; margin-bottom: 0; font-size: 0.85rem; line-height: 1.5; }
+    .sheet-hint code { background: var(--bg); padding: 0.1em 0.35em; border-radius: 3px; font-size: 0.9em; }
     .template-preview-box { background: var(--bg); border-radius: var(--radius-sm); padding: 0.75rem; margin-bottom: 0.75rem; max-height: 140px; overflow: auto; }
     .template-preview-text { margin: 0; font-size: 0.8rem; white-space: pre-wrap; word-break: break-word; color: var(--text); }
     .template-preview-note { margin: 0.5rem 0 0 0; font-size: 0.85rem; color: var(--teal); }
@@ -371,8 +375,15 @@
         </div>
         <div class="template-row">
           <label>Google 試算表寫入</label>
-          <input type="text" id="optSheetUrl" placeholder="https://script.google.com/macros/s/AKfycbwWhXRlPZdIRxoqvMM5YjV2T3LQpQyvPNfEw224VChETr5c8ASEZOR6pA6zoMO5BGky/exec" />
+          <input type="text" id="optSheetUrl" placeholder="貼上「網頁應用程式」網址（見下方說明）" />
         </div>
+        <div class="template-row">
+          <label class="checkbox-label">
+            <input type="checkbox" id="optSheetWriteOnPdf" checked />
+            一鍵產生 PDF 後同時寫入試算表
+          </label>
+        </div>
+        <p class="hint sheet-hint">填寫上方網址並勾選「一鍵產生 PDF 後同時寫入試算表」後，按 <strong>一鍵產生 PDF</strong> 會將本團訂單資料自動寫入該試算表。<br><strong>如何取得網址：</strong>開一個 Google 試算表 → 擴充功能 → Apps Script → 貼上專案裡的 <code>GoogleAppsScript_試算表寫入.gs</code> 程式碼 → 部署 → 新增部署 → 類型選「網頁應用程式」→ 執行身分「我」、存取權「任何人」→ 部署後複製網址貼到上方欄位。</p>
       </div>
     </section>
 
@@ -423,7 +434,8 @@
   </div>
   <div id="pdfContainer" style="position:absolute;left:-9999px;top:0;width:210mm;min-height:297mm;background:#fff;padding:12mm;font-family:Microsoft JhengHei,sans-serif;font-size:11pt;line-height:1.5;color:#333;box-sizing:border-box;"></div>
 
-  <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" crossorigin="anonymous"></script>
   <script>
     function init() {
     (function () {
@@ -1071,6 +1083,7 @@
             storeAddr: (document.getElementById('optStoreAddr') && document.getElementById('optStoreAddr').value) || '',
             shipDate: (document.getElementById('optShipDate') && document.getElementById('optShipDate').value) || '',
             sheetUrl: (document.getElementById('optSheetUrl') && document.getElementById('optSheetUrl').value) || '',
+            sheetWriteOnPdf: !!(document.getElementById('optSheetWriteOnPdf') && document.getElementById('optSheetWriteOnPdf').checked),
           };
           localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(o));
         } catch (e) {}
@@ -1090,6 +1103,7 @@
           if (o.storeAddr != null && (el = document.getElementById('optStoreAddr'))) el.value = o.storeAddr;
           if (o.shipDate != null && (el = document.getElementById('optShipDate'))) el.value = o.shipDate;
           if (o.sheetUrl != null && (el = document.getElementById('optSheetUrl'))) el.value = o.sheetUrl;
+          if (o.sheetWriteOnPdf !== undefined && (el = document.getElementById('optSheetWriteOnPdf'))) el.checked = !!o.sheetWriteOnPdf;
         } catch (e) {}
       }
       (function setDefaultDate() {
@@ -1101,7 +1115,7 @@
       })();
       loadTemplateOptions();
 
-      ['optTitle', 'optDate', 'optOrderId', 'optDeposit', 'optShipping', 'optStore', 'optStoreAddr', 'optShipDate', 'optSheetUrl'].forEach(function (id) {
+      ['optTitle', 'optDate', 'optOrderId', 'optDeposit', 'optShipping', 'optStore', 'optStoreAddr', 'optShipDate', 'optSheetUrl', 'optSheetWriteOnPdf'].forEach(function (id) {
         var el = document.getElementById(id);
         if (el) el.addEventListener('change', saveTemplateOptions);
       });
@@ -1169,17 +1183,17 @@
         var storeName = (data.storeName || '').trim();
         var storeAddr = (data.storeAddr || '').trim();
         var shipDateStr = (data.shipDateStr || '').trim();
-        var header = ['訂單編號', '客戶姓名', '取貨門市', '門市地址', '預購日期', '出貨日期', '品項明細', '小計', '訂金', '運費', '補款', '總金額'];
+        // 與「訂單寫入留存.xlsm」資料庫欄位一致（無訂單編號，最後一欄為訂單總金額）
+        var header = ['客戶姓名', '取貨門市', '門市地址', '預購日期', '出貨日期', '品項明細', '小計', '訂金', '運費', '補款', '訂單總金額'];
         var rows = [];
         data.perPerson.forEach(function (p, i) {
-          var orderId = padOrderId(orderIdNum + i);
           var total = (p.totalWithShipping != null ? p.totalWithShipping : (p.total != null ? p.total : 0));
           var paid = (p.paid != null ? p.paid : 0);
           var ship = (p.shipping != null ? p.shipping : shippingNum);
           var supplement = (p.supplement != null ? p.supplement : Math.max(0, total - paid));
           var subtotal = (p.total != null ? p.total : 0);
           var itemsText = (p.items || []).map(function (it) { return (it.name || '') + '×' + (it.qty != null ? it.qty : ''); }).join('、');
-          rows.push([orderId, p.name || '', storeName, storeAddr, dateStr, shipDateStr, itemsText, subtotal, paid, ship, supplement, total]);
+          rows.push([p.name || '', storeName, storeAddr, dateStr, shipDateStr, itemsText, subtotal, paid, ship, supplement, total]);
         });
         var tsv = header.join('\t') + '\n' + rows.map(function (r) { return r.map(function (c) { return String(c).replace(/\t/g, ' ').replace(/\n/g, ' '); }).join('\t'); }).join('\n');
         return { title: title, header: header, rows: rows, tsv: tsv };
@@ -1264,15 +1278,6 @@
         btn.textContent = '產生中…';
         btn.disabled = true;
         var filename = (title.replace(/[/\\?%*:|"<>]/g, '_') || '購買明細') + '_購買明細.pdf';
-        var pdfOpts = {
-          margin: 8,
-          filename: filename,
-          image: { type: 'jpeg', quality: 0.95 },
-          html2canvas: { scale: 1.5, useCORS: true },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-          pagebreak: { mode: ['css', 'legacy'], before: '.pdf-page-break-before', after: '.pdf-page-break-after' }
-        };
-
         function cleanup() {
           var w = document.getElementById('pdfTempWrap');
           if (w && w.parentNode) w.parentNode.removeChild(w);
@@ -1287,53 +1292,76 @@
             return new Promise(function (resolve) {
               img.onload = resolve;
               img.onerror = resolve;
-              setTimeout(resolve, 4000);
+              setTimeout(resolve, 5000);
             });
           });
           return Promise.all(arr);
         }
 
-        var fullHtml = pageHtmls.map(function (h) {
-          return h.replace(/page-break-after:always/g, 'page-break-after: always').replace(/<div style="/, '<div class="pdf-page-break-after" style="');
-        }).join('');
-        var wrap = document.createElement('div');
-        wrap.id = 'pdfTempWrap';
-        wrap.setAttribute('style', 'position:fixed;left:0;top:0;width:794px;background:#fff;padding:0;box-sizing:border-box;z-index:99999;font-family:Microsoft JhengHei,sans-serif;');
-        wrap.innerHTML = fullHtml;
-        document.body.appendChild(wrap);
-
-        waitForImgs(wrap).then(function () {
-          return new Promise(function (r) { requestAnimationFrame(function () { setTimeout(r, 500); }); });
-        }).then(function () {
-          var el = document.getElementById('pdfTempWrap');
-          if (!el) { cleanup(); return; }
-          el.scrollIntoView({ block: 'start', behavior: 'auto' });
-          var h = el.offsetHeight;
-          if (typeof html2pdf !== 'undefined') {
-            html2pdf().set(pdfOpts).from(el).save().then(function () {
-              cleanup();
-              var sheetUrl = (document.getElementById('optSheetUrl') && document.getElementById('optSheetUrl').value.trim()) || '';
-              if (sheetUrl && data) {
-                var built = buildSheetDataFromPdfData(data);
-                if (built.rows.length > 0) {
-                  var payload = { title: built.title, header: built.header, rows: built.rows };
-                  fetch(sheetUrl, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain;charset=utf-8' } }).catch(function () {});
-                }
-              }
-            }).catch(function (err) {
-              cleanup();
-              console.error('html2pdf error', err);
-              alert('產生 PDF 時發生錯誤：' + (err && err.message ? err.message : '請再試一次'));
-            });
-          } else {
-            cleanup();
-            alert('產生 PDF 時發生錯誤：未載入 html2pdf');
+        function doSheetWrite() {
+          var sheetWriteOnPdf = document.getElementById('optSheetWriteOnPdf') && document.getElementById('optSheetWriteOnPdf').checked;
+          var sheetUrl = (document.getElementById('optSheetUrl') && document.getElementById('optSheetUrl').value.trim()) || '';
+          if (sheetWriteOnPdf && sheetUrl && data) {
+            var built = buildSheetDataFromPdfData(data);
+            if (built.rows.length > 0) {
+              var payload = { title: built.title, header: built.header, rows: built.rows };
+              fetch(sheetUrl, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain;charset=utf-8' } }).catch(function () {});
+            }
           }
-        }).catch(function (err) {
+        }
+
+        var JSPDF = (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : (window.jsPDF || null);
+        var hasHtml2Canvas = typeof html2canvas === 'function';
+        if (!JSPDF || !hasHtml2Canvas) {
           cleanup();
-          console.error(err);
-          alert('產生 PDF 時發生錯誤，請再試一次');
-        });
+          alert('產生 PDF 時發生錯誤：未載入 html2canvas 或 jspdf');
+          return;
+        }
+
+        (function runPage(idx, pdfSoFar) {
+          if (idx >= pageHtmls.length) {
+            if (pdfSoFar) pdfSoFar.save(filename);
+            cleanup();
+            doSheetWrite();
+            return;
+          }
+          var wrap = document.createElement('div');
+          wrap.id = 'pdfTempWrap';
+          wrap.setAttribute('style', 'position:fixed;left:0;top:0;width:794px;height:1123px;overflow:visible;background:#fff;padding:24px;box-sizing:border-box;z-index:99999;font-family:Microsoft JhengHei,sans-serif;');
+          wrap.innerHTML = pageHtmls[idx];
+          document.body.appendChild(wrap);
+
+          waitForImgs(wrap).then(function () {
+            return new Promise(function (r) { requestAnimationFrame(function () { setTimeout(r, 700); }); });
+          }).then(function () {
+            var el = document.getElementById('pdfTempWrap');
+            if (!el) { cleanup(); return; }
+            el.scrollIntoView({ block: 'start', behavior: 'auto' });
+            html2canvas(el, { scale: 1.5, useCORS: true, logging: false }).then(function (canvas) {
+              var imgData = canvas.toDataURL('image/jpeg', 0.92);
+              if (el.parentNode) el.parentNode.removeChild(el);
+              var pdf;
+              if (idx === 0) {
+                pdf = new JSPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+                pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+              } else {
+                pdfSoFar.addPage('a4', 'portrait');
+                pdfSoFar.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+                pdf = pdfSoFar;
+              }
+              runPage(idx + 1, pdf);
+            }).catch(function (err) {
+              if (el.parentNode) el.parentNode.removeChild(el);
+              cleanup();
+              console.error(err);
+              alert('產生 PDF 時發生錯誤，請再試一次');
+            });
+          }).catch(function (err) {
+            cleanup();
+            console.error(err);
+            alert('產生 PDF 時發生錯誤，請再試一次');
+          });
+        })(0, null);
       });
 
       function escapeHtml(s) {
