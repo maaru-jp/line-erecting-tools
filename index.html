@@ -396,6 +396,10 @@
           <label>出貨日期</label>
           <input type="date" id="optShipDate" placeholder="選填" />
         </div>
+        <div class="template-row">
+          <label>Google 試算表寫入</label>
+          <input type="text" id="optSheetUrl" placeholder="選填：Apps Script Web App 網址（一鍵產生 PDF 後自動寫入）" />
+        </div>
       </div>
     </section>
 
@@ -431,6 +435,7 @@
         <div class="copy-wrap template-actions" id="customerSummaryWrap">
           <button type="button" class="copy-btn copy-btn-full" id="copyFullTemplateBtn">📋 一鍵複製給客人明細</button>
           <button type="button" class="copy-btn copy-btn-pdf" id="generatePdfBtn">📎 一鍵產生 PDF</button>
+          <button type="button" class="copy-btn" id="copySheetDataBtn">📊 複製訂單資料（貼上 Google 試算表）</button>
         </div>
       </div>
       <div class="result-card">
@@ -446,8 +451,7 @@
   </div>
   <div id="pdfContainer" style="position:absolute;left:-9999px;top:0;width:210mm;min-height:297mm;background:#fff;padding:12mm;font-family:Microsoft JhengHei,sans-serif;font-size:11pt;line-height:1.5;color:#333;box-sizing:border-box;"></div>
 
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" crossorigin="anonymous"></script>
-  <script src="html2pdf.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js" crossorigin="anonymous"></script>
   <script>
     function init() {
     (function () {
@@ -1098,6 +1102,7 @@
             store: (document.getElementById('optStore') && document.getElementById('optStore').value) || '',
             storeAddr: (document.getElementById('optStoreAddr') && document.getElementById('optStoreAddr').value) || '',
             shipDate: (document.getElementById('optShipDate') && document.getElementById('optShipDate').value) || '',
+            sheetUrl: (document.getElementById('optSheetUrl') && document.getElementById('optSheetUrl').value) || '',
             logoDataUrl: logoData
           };
           localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(o));
@@ -1118,6 +1123,7 @@
           if (o.store != null && (el = document.getElementById('optStore'))) el.value = o.store;
           if (o.storeAddr != null && (el = document.getElementById('optStoreAddr'))) el.value = o.storeAddr;
           if (o.shipDate != null && (el = document.getElementById('optShipDate'))) el.value = o.shipDate;
+          if (o.sheetUrl != null && (el = document.getElementById('optSheetUrl'))) el.value = o.sheetUrl;
           if (o.logoDataUrl) {
             window._logoDataUrl = o.logoDataUrl;
             var wrap = document.getElementById('logoPreviewWrap');
@@ -1135,7 +1141,7 @@
       })();
       loadTemplateOptions();
 
-      ['optTitle', 'optDate', 'optOrderId', 'optDeposit', 'optShipping', 'optLogoUrl', 'optStore', 'optStoreAddr', 'optShipDate'].forEach(function (id) {
+      ['optTitle', 'optDate', 'optOrderId', 'optDeposit', 'optShipping', 'optLogoUrl', 'optStore', 'optStoreAddr', 'optShipDate', 'optSheetUrl'].forEach(function (id) {
         var el = document.getElementById(id);
         if (el) el.addEventListener('change', saveTemplateOptions);
       });
@@ -1241,6 +1247,46 @@
         }.bind(this)).catch(function () {
           alert('無法複製，請手動選取複製');
         });
+      });
+
+      function buildSheetDataFromPdfData(data) {
+        if (!data || !data.perPerson || data.perPerson.length === 0) return { header: [], rows: [], tsv: '' };
+        var title = data.title || '訂單明細';
+        var dateStr = data.dateStr || '';
+        var shippingNum = data.shippingNum || 0;
+        var orderIdNum = data.orderIdNum;
+        var padOrderId = data.padOrderId;
+        var storeName = (data.storeName || '').trim();
+        var storeAddr = (data.storeAddr || '').trim();
+        var shipDateStr = (data.shipDateStr || '').trim();
+        var header = ['訂單編號', '客戶姓名', '取貨門市', '門市地址', '預購日期', '出貨日期', '品項明細', '小計', '訂金', '運費', '補款', '總金額'];
+        var rows = [];
+        data.perPerson.forEach(function (p, i) {
+          var orderId = padOrderId(orderIdNum + i);
+          var total = (p.totalWithShipping != null ? p.totalWithShipping : (p.total != null ? p.total : 0));
+          var paid = (p.paid != null ? p.paid : 0);
+          var ship = (p.shipping != null ? p.shipping : shippingNum);
+          var supplement = (p.supplement != null ? p.supplement : Math.max(0, total - paid));
+          var subtotal = (p.total != null ? p.total : 0);
+          var itemsText = (p.items || []).map(function (it) { return (it.name || '') + '×' + (it.qty != null ? it.qty : ''); }).join('、');
+          rows.push([orderId, p.name || '', storeName, storeAddr, dateStr, shipDateStr, itemsText, subtotal, paid, ship, supplement, total]);
+        });
+        var tsv = header.join('\t') + '\n' + rows.map(function (r) { return r.map(function (c) { return String(c).replace(/\t/g, ' ').replace(/\n/g, ' '); }).join('\t'); }).join('\n');
+        return { title: title, header: header, rows: rows, tsv: tsv };
+      }
+
+      document.getElementById('copySheetDataBtn').addEventListener('click', function () {
+        var data = window._lastPdfData;
+        var built = buildSheetDataFromPdfData(data);
+        if (!built.tsv) {
+          alert('請先貼上喊單並完成統計');
+          return;
+        }
+        navigator.clipboard.writeText(built.tsv).then(function () {
+          this.textContent = '✓ 已複製！請到 Google 試算表貼上';
+          var btn = this;
+          setTimeout(function () { btn.textContent = '📊 複製訂單資料（貼上 Google 試算表）'; }, 2500);
+        }.bind(this)).catch(function () { alert('無法複製，請手動選取複製'); });
       });
 
       document.getElementById('generatePdfBtn').addEventListener('click', function () {
@@ -1368,7 +1414,17 @@
           el.scrollIntoView({ block: 'start', behavior: 'auto' });
           var h = el.offsetHeight;
           if (typeof html2pdf !== 'undefined') {
-            html2pdf().set(pdfOpts).from(el).save().then(cleanup).catch(function (err) {
+            html2pdf().set(pdfOpts).from(el).save().then(function () {
+              cleanup();
+              var sheetUrl = (document.getElementById('optSheetUrl') && document.getElementById('optSheetUrl').value.trim()) || '';
+              if (sheetUrl && data) {
+                var built = buildSheetDataFromPdfData(data);
+                if (built.rows.length > 0) {
+                  var payload = { title: built.title, header: built.header, rows: built.rows };
+                  fetch(sheetUrl, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain;charset=utf-8' } }).catch(function () {});
+                }
+              }
+            }).catch(function (err) {
               cleanup();
               console.error('html2pdf error', err);
               alert('產生 PDF 時發生錯誤：' + (err && err.message ? err.message : '請再試一次'));
