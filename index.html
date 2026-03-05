@@ -1,0 +1,1489 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LINE 喊單自動統計工具</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f8f6f3;
+      --bg-gradient: linear-gradient(160deg, #faf9f7 0%, #f0ede8 50%, #e8e6e1 100%);
+      --card: #fff;
+      --ink: #2d2a26;
+      --ink-muted: #6b6560;
+      --accent: #c17f59;
+      --accent-soft: #f5ebe5;
+      --accent-dark: #a66b48;
+      --teal: #2d6a6a;
+      --teal-soft: #e6f0f0;
+      --green: #3d7a5c;
+      --green-soft: #e5f0ea;
+      --border: #e5e2dd;
+      --radius: 16px;
+      --radius-sm: 12px;
+      --shadow: 0 2px 12px rgba(45, 42, 38, 0.06);
+      --shadow-card: 0 8px 32px rgba(45, 42, 38, 0.08);
+      --font-sans: 'Noto Sans TC', sans-serif;
+      --font-display: 'Outfit', 'Noto Sans TC', sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg-gradient);
+      background-attachment: fixed;
+      color: var(--ink);
+      font-family: var(--font-sans);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+      padding: 2rem 1rem;
+    }
+
+    header::before {
+      content: '';
+      display: block;
+      width: 48px;
+      height: 4px;
+      background: linear-gradient(90deg, var(--accent), var(--teal));
+      margin: 0 auto 1.25rem;
+      border-radius: 2px;
+    }
+
+    h1 {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: clamp(1.75rem, 4.5vw, 2.1rem);
+      color: var(--ink);
+      margin: 0 0 0.5rem;
+      letter-spacing: -0.03em;
+    }
+
+    .tagline {
+      color: var(--ink-muted);
+      font-size: 0.95rem;
+      margin: 0;
+      white-space: nowrap;
+    }
+
+    .input-section {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-card);
+      padding: 1.75rem;
+      margin-bottom: 1.5rem;
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+    }
+
+    .input-section label {
+      display: block;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 0.5rem;
+      font-size: 0.95rem;
+    }
+
+    .input-section p.hint {
+      font-size: 0.85rem;
+      color: var(--ink-muted);
+      margin: 0.4rem 0 0;
+    }
+
+    .input-section .deposit-label { margin-top: 1.5rem; display: block; }
+    .input-section #deposit { min-height: 100px; margin-top: 0.5rem; }
+
+    .price-template-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    .template-load-wrap label { margin: 0; font-weight: 500; font-size: 0.9rem; }
+    .template-load-wrap select {
+      padding: 0.4rem 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-sans);
+      font-size: 0.9rem;
+      background: var(--card);
+    }
+
+    .missing-price-alert {
+      margin-top: 1rem;
+      padding: 0.85rem 1rem;
+      background: linear-gradient(135deg, #fef8e8 0%, #fdf3e0 100%);
+      border: 1px solid #e8d4a8;
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      color: #7a6238;
+    }
+    .missing-price-alert strong { display: block; margin-bottom: 0.25rem; }
+
+    .template-options {
+      margin-top: 1.5rem;
+      padding-top: 1.25rem;
+      border-top: 2px dashed var(--border);
+    }
+    .template-options-title {
+      font-size: 0.85rem;
+      color: var(--ink-muted);
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+    .template-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .template-row label { min-width: 100px; font-size: 0.9rem; margin: 0; }
+    .template-row input {
+      flex: 1;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-sans);
+      font-size: 0.9rem;
+    }
+    .logo-input-wrap { display: flex; align-items: center; gap: 0.5rem; flex: 1; flex-wrap: wrap; }
+    .logo-input-wrap input[type="text"] { flex: 1; min-width: 120px; }
+    .upload-logo-btn {
+      display: inline-block;
+      padding: 0.4rem 0.75rem;
+      background: var(--card);
+      border: 1px solid var(--teal);
+      color: var(--teal);
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .upload-logo-btn:hover { background: var(--teal-soft); }
+    .logo-preview-wrap { margin-left: 0.5rem; align-self: center; display: inline-flex; align-items: center; gap: 0.35rem; }
+    .logo-preview-wrap img { max-height: 36px; max-width: 120px; object-fit: contain; vertical-align: middle; }
+    .clear-logo-btn { padding: 0.2rem 0.5rem; font-size: 0.75rem; background: transparent; border: 1px solid var(--border); border-radius: var(--radius-sm); color: #666; cursor: pointer; }
+    .clear-logo-btn:hover { background: #f5f5f5; color: #333; }
+
+    textarea {
+      width: 100%;
+      min-height: 180px;
+      padding: 1rem 1.15rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      line-height: 1.6;
+      resize: vertical;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      background: var(--card);
+    }
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    .btn-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem; }
+
+    button {
+      font-family: var(--font-sans);
+      font-weight: 600;
+      font-size: 0.95rem;
+      padding: 0.7rem 1.35rem;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: transform 0.12s ease, box-shadow 0.2s ease;
+    }
+    button:active { transform: scale(0.98); }
+
+    button.primary {
+      background: linear-gradient(180deg, var(--accent) 0%, var(--accent-dark) 100%);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(193, 127, 89, 0.35);
+    }
+    button.primary:hover {
+      box-shadow: 0 6px 20px rgba(193, 127, 89, 0.4);
+      filter: brightness(1.03);
+    }
+
+    button.secondary {
+      background: var(--bg);
+      color: var(--ink);
+      border: 1px solid var(--border);
+    }
+    button.secondary:hover {
+      background: var(--border);
+      border-color: #d5d2cc;
+    }
+
+    .results { display: grid; gap: 1.25rem; margin-top: 1.5rem; }
+
+    .result-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-card);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      border-left: 4px solid var(--teal);
+    }
+
+    .result-card h2 {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 1.05rem;
+      margin: 0;
+      padding: 1rem 1.25rem;
+      background: linear-gradient(180deg, #fafaf9 0%, #f2f0ee 100%);
+      border-bottom: 1px solid var(--border);
+      color: var(--ink);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .result-card h2 .icon { font-size: 1.15rem; opacity: 0.9; }
+
+    .result-card .body { padding: 1rem 1.25rem; overflow-x: auto; }
+
+    .result-card .copy-wrap {
+      padding: 0 1.25rem 1rem;
+      border-top: 1px solid var(--border);
+      padding-top: 1rem;
+    }
+    .copy-wrap .copy-btn + .copy-btn { margin-top: 0.5rem; }
+
+    .result-card .copy-btn {
+      width: 100%;
+      background: var(--teal-soft);
+      color: var(--teal);
+      font-size: 0.9rem;
+    }
+    .result-card .copy-btn:hover {
+      background: var(--teal);
+      color: #fff;
+    }
+    .copy-btn-full {
+      background: var(--card);
+      color: var(--teal);
+      border: 1px solid var(--teal);
+    }
+    .copy-btn-full:hover { background: var(--teal-soft); }
+    .copy-btn-pdf {
+      background: #f0e8f4;
+      color: #6b4a7a;
+      border: 1px solid #c4a8d4;
+    }
+    .copy-btn-pdf:hover { background: #e0d0e8; }
+    .customer-summary-card .template-desc { font-size: 0.9rem; color: var(--muted); margin: 0 0 0.75rem 0; line-height: 1.4; }
+    .template-preview-box { background: var(--bg); border-radius: var(--radius-sm); padding: 0.75rem; margin-bottom: 0.75rem; max-height: 140px; overflow: auto; }
+    .template-preview-text { margin: 0; font-size: 0.8rem; white-space: pre-wrap; word-break: break-word; color: var(--text); }
+    .template-preview-note { margin: 0.5rem 0 0 0; font-size: 0.85rem; color: var(--teal); }
+    .template-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td {
+      text-align: left;
+      padding: 0.65rem 0.85rem;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      font-weight: 600;
+      color: var(--ink-muted);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafaf9; }
+
+    .amount { font-weight: 600; font-variant-numeric: tabular-nums; }
+    .supplement { color: var(--accent-dark); font-weight: 600; }
+
+    .no-data {
+      color: var(--ink-muted);
+      text-align: center;
+      padding: 2rem;
+      font-size: 0.95rem;
+    }
+
+    .summary-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      padding: 0.85rem 0;
+    }
+    .summary-bar span {
+      background: linear-gradient(135deg, var(--teal-soft) 0%, #dce8e8 100%);
+      color: var(--teal);
+      padding: 0.45rem 0.9rem;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border: 1px solid rgba(45, 106, 106, 0.15);
+    }
+
+    @media (max-width: 600px) {
+      .wrap { padding: 1.5rem 1rem 3rem; }
+      .input-section { padding: 1.25rem; }
+      .tagline { white-space: normal; }
+      th, td { padding: 0.5rem 0.6rem; font-size: 0.85rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>LINE 喊單自動統計工具</h1>
+      <p class="tagline">貼上群組喊單，自動算出每人訂單、品項數量、補款與採購清單</p>
+    </header>
+
+    <section class="input-section">
+      <label for="raw">貼上 LINE 喊單內容</label>
+      <textarea id="raw" placeholder="直接貼客人喊的內容，每行一筆：&#10;于 薄荷巧克力冰淇淋布丁狗+1&#10;于 蘇打汽水布丁狗+1&#10;（姓名 品項+數量，空格或 Tab 分隔）"></textarea>
+      <p class="hint">貼客人實際喊單，<strong>姓名 品項+數量</strong>，同一人可多行。下方填「品項單價」後可自動計算每人應付與補款。</p>
+      <div class="btn-row">
+        <button type="button" class="primary" id="parseBtn">開始統計</button>
+        <button type="button" class="secondary" id="clearBtn">清空</button>
+      </div>
+
+      <label for="prices" class="deposit-label">品項單價（選填，用於自動計算應付與訂金）</label>
+      <textarea id="prices" placeholder="每行一筆：品項 單價&#10;或 階梯價：品項 預設單價 滿N個 每個M元&#10;例：薄荷巧克力布丁狗 380&#10;例：薄荷巧克力布丁狗 400 3 380（買3個以上每個380）"></textarea>
+      <div class="price-template-row">
+        <button type="button" class="secondary" id="savePriceTemplateBtn">儲存為範本</button>
+        <span class="template-load-wrap">
+          <label for="loadPriceTemplate">載入範本：</label>
+          <select id="loadPriceTemplate">
+            <option value="">— 請選擇 —</option>
+          </select>
+        </span>
+        <button type="button" class="secondary" id="deletePriceTemplateBtn">刪除所選範本</button>
+      </div>
+      <p class="hint">按「開始統計」後會自動帶入喊單出現的品項名稱，您只需補上單價。支援階梯價：<strong>品項 預設 滿N 每個M</strong>（如 品項 400 3 380 = 買3個以上每個380）。</p>
+
+      <div id="missingPriceAlert" class="missing-price-alert" style="display: none;"></div>
+
+      <div class="template-options" id="templateOptions">
+        <span class="template-options-title">給客人明細（完整版選填）</span>
+        <div class="template-row">
+          <label>團名／標題</label>
+          <input type="text" id="optTitle" placeholder="例：🍮 kthings 水果冰淇淋布丁狗開團" />
+        </div>
+        <div class="template-row">
+          <label>訂單成立日期</label>
+          <input type="date" id="optDate" />
+        </div>
+        <div class="template-row">
+          <label>訂單編號起號</label>
+          <input type="text" id="optOrderId" placeholder="例：00100（每人自動+1）" />
+        </div>
+        <div class="template-row">
+          <label>訂金金額</label>
+          <input type="text" id="optDeposit" placeholder="例：300（預設顯示用）" />
+        </div>
+        <div class="template-row">
+          <label>賣貨便運費</label>
+          <input type="text" id="optShipping" placeholder="例：0 或 60" value="0" />
+        </div>
+        <div class="template-row">
+          <label>品牌 Logo</label>
+          <span class="logo-input-wrap">
+            <input type="text" id="optLogoUrl" placeholder="圖片網址（或下方上傳）" />
+            <label class="upload-logo-btn">上傳圖片<input type="file" id="optLogoFile" accept="image/*" style="display:none" /></label>
+          </span>
+          <span id="logoPreviewWrap" class="logo-preview-wrap" style="display:none;"><img id="logoPreview" alt="Logo" style="max-height:36px;" /><button type="button" class="clear-logo-btn" id="clearLogoBtn" title="清除已儲存的 Logo">清除</button></span>
+        </div>
+        <div class="template-row">
+          <label>取貨門市</label>
+          <input type="text" id="optStore" placeholder="例：博愛門市、7-11 某某門市" />
+        </div>
+        <div class="template-row">
+          <label>門市地址</label>
+          <input type="text" id="optStoreAddr" placeholder="例：彰化縣彰化市南校街134號" />
+        </div>
+        <div class="template-row">
+          <label>出貨日期</label>
+          <input type="date" id="optShipDate" placeholder="選填" />
+        </div>
+      </div>
+    </section>
+
+    <div class="summary-bar" id="summaryBar" style="display: none;"></div>
+    <div class="results" id="results">
+      <div class="result-card">
+        <h2><span class="icon">👤</span>每人訂單</h2>
+        <div class="body" id="perPersonBody">
+          <p class="no-data">請貼上喊單後按「開始統計」</p>
+        </div>
+      </div>
+      <div class="result-card">
+        <h2><span class="icon">📦</span>每個品項採購數</h2>
+        <div class="body" id="perItemBody">
+          <p class="no-data">—</p>
+        </div>
+      </div>
+      <div class="result-card">
+        <h2><span class="icon">💰</span>補款明細</h2>
+        <div class="body" id="supplementBody">
+          <p class="no-data">—</p>
+        </div>
+        <div class="copy-wrap" id="copySupplementWrap" style="display: none;">
+          <button type="button" class="copy-btn" id="copySupplementBtn">📋 一鍵複製補款明細（簡短版）</button>
+        </div>
+      </div>
+      <div class="result-card customer-summary-card" id="customerSummaryCard" style="display: none;">
+        <h2><span class="icon">📄</span>給客人明細（模板）</h2>
+        <p class="template-desc">依上方「給客人明細」設定（團名、日期、訂單編號、訂金、運費、Logo、取貨門市）與統計結果，一鍵複製文字或產生 PDF 給客人。</p>
+        <div class="body template-preview-box" id="customerSummaryPreview">
+          <p class="no-data">—</p>
+        </div>
+        <div class="copy-wrap template-actions" id="customerSummaryWrap">
+          <button type="button" class="copy-btn copy-btn-full" id="copyFullTemplateBtn">📋 一鍵複製給客人明細</button>
+          <button type="button" class="copy-btn copy-btn-pdf" id="generatePdfBtn">📎 一鍵產生 PDF</button>
+        </div>
+      </div>
+      <div class="result-card">
+        <h2><span class="icon">📋</span>採購清單</h2>
+        <div class="body" id="purchaseListBody">
+          <p class="no-data">—</p>
+        </div>
+        <div class="copy-wrap" id="copyPurchaseWrap" style="display: none;">
+          <button type="button" class="copy-btn" id="copyPurchaseBtn">📋 一鍵複製採購清單</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="pdfContainer" style="position:absolute;left:-9999px;top:0;width:210mm;min-height:297mm;background:#fff;padding:12mm;font-family:Microsoft JhengHei,sans-serif;font-size:11pt;line-height:1.5;color:#333;box-sizing:border-box;"></div>
+
+  <script src="html2pdf.bundle.min.js"></script>
+  <script>
+    function init() {
+    (function () {
+      const rawEl = document.getElementById('raw');
+      const depositEl = document.getElementById('deposit');
+      const parseBtn = document.getElementById('parseBtn');
+      const clearBtn = document.getElementById('clearBtn');
+      const copySupplementBtn = document.getElementById('copySupplementBtn');
+      const copySupplementWrap = document.getElementById('copySupplementWrap');
+      const perPersonBody = document.getElementById('perPersonBody');
+      const perItemBody = document.getElementById('perItemBody');
+      const supplementBody = document.getElementById('supplementBody');
+      const purchaseListBody = document.getElementById('purchaseListBody');
+
+      // 格式一：Tab/空格分隔，每行一筆「姓名 + 品項+數量」（例：于 薄荷巧克力冰淇淋布丁狗+1）
+      function parseLineTab(line) {
+        const t = (line || '').replace(/\r/g, '').trim();
+        if (!t) return null;
+        let name, itemName, qty;
+        const parts = t.split(/\t/);
+        if (parts.length >= 2) {
+          name = (parts[0] || '').trim();
+          const rest = (parts[1] || '').trim();
+          const plusMatch = rest.match(/^(.+)[+＋](\d+)$/);
+          if (!plusMatch) return null;
+          itemName = plusMatch[1].trim();
+          qty = parseInt(plusMatch[2], 10);
+        } else {
+          const m = t.match(/^(\S+)\s+(.+)[+＋](\d+)$/);
+          if (!m) return null;
+          name = m[1].trim();
+          itemName = m[2].trim();
+          qty = parseInt(m[3], 10);
+        }
+        if (!name || !itemName || isNaN(qty)) return null;
+        return { personName: name, itemName, qty };
+      }
+
+      // 格式二：每人一行，品項x數量、共/應付、已付/已匯
+      function parseLine(line) {
+        const t = line.trim();
+        if (!t) return null;
+
+        const itemPattern = /([^\d\sxX*×＋+共應付已匯款總計總額\s]+)(?:\s*[xX*×]\s*|\s*[xX*×])(\d+)/g;
+        const totalPattern = /(?:共|應付|總計|總額)\s*(\d+)/;
+        const paidPattern = /(?:已付|已匯|匯款|付)\s*(\d+)/;
+
+        const items = [];
+        let m;
+        while ((m = itemPattern.exec(t)) !== null) {
+          const name = m[1].replace(/^[、\s：:]+|[、\s：:]+$/g, '').trim();
+          if (name && !/^(共|應付|已付|已匯|總計|總額)$/.test(name)) items.push({ name: name, qty: parseInt(m[2], 10) });
+        }
+
+        const totalMatch = t.match(totalPattern);
+        const paidMatch = t.match(paidPattern);
+        const total = totalMatch ? parseInt(totalMatch[1], 10) : null;
+        const paid = paidMatch ? parseInt(paidMatch[1], 10) : null;
+
+        let personName = '';
+        const nameColon = t.match(/^([^：:\d\s]+)[：:]/);
+        if (nameColon) {
+          personName = nameColon[1].trim();
+        } else {
+          const firstPart = (t.split(/\s+/)[0] || '').trim();
+          if (firstPart && !/^(共|應付|已付|已匯|總計|總額|\d+)$/.test(firstPart)) {
+            personName = firstPart;
+          }
+        }
+        if (!personName && items.length > 0) personName = '未命名';
+
+        return { personName, items, total, paid, raw: t };
+      }
+
+      // 格式：姓名 品項+數量 $金額，接著 總計$xxx、訂金$xxx、應補款金額$xxx（套用上一人）
+      function parseLineWithPrice(line) {
+        const t = line.trim();
+        if (!t) return null;
+        const m = t.match(/^(\S+)\s+(.+)\+(\d+)\s*\$?\s*(\d+)$/);
+        if (!m) return null;
+        const personName = m[1].trim();
+        const itemName = m[2].trim();
+        const qty = parseInt(m[3], 10);
+        const price = parseInt(m[4], 10);
+        if (!personName || !itemName || isNaN(qty)) return null;
+        return { personName, itemName, qty, price };
+      }
+
+      function parseSummaryLine(line) {
+        const t = line.trim();
+        const totalM = t.match(/總計\s*\$?\s*(\d+)/);
+        if (totalM) return { type: 'total', value: parseInt(totalM[1], 10) };
+        const paidM = t.match(/訂金\s*\$?\s*(\d+)/);
+        if (paidM) return { type: 'paid', value: parseInt(paidM[1], 10) };
+        const suppM = t.match(/應補款(?:金額)?\s*\$?\s*(\d+)/);
+        if (suppM) return { type: 'supplement', value: parseInt(suppM[1], 10) };
+        return null;
+      }
+
+      function parseBlockFormat(text) {
+        const lines = text.split(/\n/).map(s => s.trim()).filter(Boolean);
+        const people = {};
+        let lastPersonName = null;
+        let hasSummary = false;
+        for (const line of lines) {
+          const itemRow = parseLineWithPrice(line);
+          if (itemRow) {
+            const name = itemRow.personName;
+            lastPersonName = name;
+            if (!people[name]) {
+              people[name] = { name, items: [], total: null, paid: null, supplement: null };
+            }
+            people[name].items.push({ name: itemRow.itemName, qty: itemRow.qty, price: itemRow.price });
+            continue;
+          }
+          const sum = parseSummaryLine(line);
+          if (sum && lastPersonName) {
+            hasSummary = true;
+            if (sum.type === 'total') people[lastPersonName].total = sum.value;
+            if (sum.type === 'paid') people[lastPersonName].paid = sum.value;
+            if (sum.type === 'supplement') people[lastPersonName].supplement = sum.value;
+          }
+        }
+        if (!lastPersonName || !hasSummary) return null;
+        const perPerson = Object.entries(people).map(([name, p]) => {
+          const total = p.total != null ? p.total : 0;
+          const paid = p.paid != null ? p.paid : 0;
+          const supplement = p.supplement != null ? p.supplement : Math.max(0, total - paid);
+          return {
+            name: p.name,
+            items: p.items,
+            total: p.total,
+            paid: p.paid,
+            supplement: supplement > 0 ? supplement : 0
+          };
+        }).sort((a, b) => a.name.localeCompare(b.name));
+        const itemTotal = {};
+        for (const p of perPerson) {
+          for (const it of p.items) {
+            itemTotal[it.name] = (itemTotal[it.name] || 0) + it.qty;
+          }
+        }
+        const supplements = perPerson.filter(p => p.supplement > 0).map(p => ({
+          name: p.name,
+          total: p.total,
+          paid: p.paid,
+          amount: p.supplement
+        }));
+        const purchaseList = Object.entries(itemTotal).map(([itemName, qty]) => ({ itemName, qty }));
+        purchaseList.sort((a, b) => b.qty - a.qty);
+        return { mode: 'block', perPerson, itemTotal, supplements, purchaseList };
+      }
+
+      // 解析「品項單價」：每行「品項 單價」或「品項 預設 滿N 每個M」（階梯價）
+      function parsePriceList(text) {
+        const map = {};
+        const lines = (text || '').split(/\n/).map(s => (s || '').trim()).filter(Boolean);
+        for (const line of lines) {
+          const tokens = line.split(/\s+/).filter(Boolean);
+          if (tokens.length >= 4) {
+            const a = parseInt(tokens[tokens.length - 3], 10);
+            const b = parseInt(tokens[tokens.length - 2], 10);
+            const c = parseInt(tokens[tokens.length - 1], 10);
+            if (!isNaN(a) && !isNaN(b) && !isNaN(c)) {
+              const name = tokens.slice(0, -3).join(' ').trim();
+              if (name) map[name] = { default: a, tier: { minQty: b, price: c } };
+              continue;
+            }
+          }
+          if (tokens.length >= 2) {
+            const price = parseInt(tokens[tokens.length - 1], 10);
+            if (!isNaN(price)) {
+              const name = tokens.slice(0, -1).join(' ').trim();
+              if (name) map[name] = price;
+            }
+          }
+        }
+        return map;
+      }
+
+      function getUnitPrice(priceMap, itemName, qty) {
+        const v = priceMap[itemName];
+        if (v == null) return 0;
+        if (typeof v === 'number') return v;
+        if (v.tier && qty >= v.tier.minQty) return v.tier.price;
+        return v.default || 0;
+      }
+
+      function getExistingPriceItemNames(text) {
+        const names = [];
+        const lines = (text || '').split(/\n/).map(s => (s || '').trim()).filter(Boolean);
+        for (const line of lines) {
+          const tokens = line.split(/\s+/).filter(Boolean);
+          if (tokens.length >= 4 && !isNaN(parseInt(tokens[tokens.length - 1], 10)) && !isNaN(parseInt(tokens[tokens.length - 2], 10)) && !isNaN(parseInt(tokens[tokens.length - 3], 10)))
+            names.push(tokens.slice(0, -3).join(' ').trim());
+          else if (tokens.length >= 2 && !isNaN(parseInt(tokens[tokens.length - 1], 10)))
+            names.push(tokens.slice(0, -1).join(' ').trim());
+          else if (tokens.length >= 1)
+            names.push(tokens.join(' ').trim());
+        }
+        return names;
+      }
+
+      // 解析「每人應付與已收訂金」：每行 姓名 應付 已收訂金（空格或 Tab 分隔）
+      function parseDeposit(text) {
+        const map = {};
+        const lines = text.split(/\n/).map(s => s.trim()).filter(Boolean);
+        for (const line of lines) {
+          const parts = line.split(/\t/);
+          let name, total, paid;
+          if (parts.length >= 3) {
+            name = parts[0].trim();
+            total = parseInt(parts[1], 10);
+            paid = parseInt(parts[2], 10);
+          } else {
+            const tokens = line.split(/\s+/);
+            if (tokens.length >= 3) {
+              paid = parseInt(tokens[tokens.length - 1], 10);
+              total = parseInt(tokens[tokens.length - 2], 10);
+              if (!isNaN(total) && !isNaN(paid)) {
+                name = tokens.slice(0, -2).join(' ').trim();
+              }
+            }
+          }
+          if (name && !isNaN(total) && !isNaN(paid)) {
+            map[name] = { total, paid };
+          }
+        }
+        return map;
+      }
+
+      function parseAll(text) {
+        const block = parseBlockFormat(text);
+        if (block) return block;
+
+        const lines = (text || '').split(/\n/).map(s => (s || '').replace(/\r/g, '').trim()).filter(Boolean);
+        const tabRows = [];
+        for (const line of lines) {
+          const row = parseLineTab(line);
+          if (row) tabRows.push(row);
+        }
+        if (tabRows.length > 0 && tabRows.length >= lines.length * 0.5) {
+          return { mode: 'tab', tabRows };
+        }
+        const orders = [];
+        for (const line of lines) {
+          const o = parseLine(line);
+          if (o && (o.personName || o.items.length > 0)) orders.push(o);
+        }
+        return { mode: 'line', orders };
+      }
+
+      function aggregateTab(tabRows) {
+        const byPerson = {};
+        const itemTotal = {};
+        for (const r of tabRows) {
+          const name = r.personName || '未命名';
+          if (!byPerson[name]) byPerson[name] = [];
+          const arr = byPerson[name];
+          const found = arr.find(function (x) { return x.name === r.itemName; });
+          if (found) found.qty += r.qty;
+          else arr.push({ name: r.itemName, qty: r.qty });
+          itemTotal[r.itemName] = (itemTotal[r.itemName] || 0) + r.qty;
+        }
+        const perPerson = Object.entries(byPerson).map(([name, items]) => ({
+          name,
+          items: items,
+          total: null,
+          paid: null,
+          supplement: 0
+        })).sort((a, b) => a.name.localeCompare(b.name));
+        const purchaseList = Object.entries(itemTotal).map(([itemName, qty]) => ({ itemName, qty }));
+        purchaseList.sort((a, b) => b.qty - a.qty);
+        return { perPerson, itemTotal, supplements: [], purchaseList };
+      }
+
+      function aggregate(orders) {
+        const perPerson = [];
+        const itemTotal = {};
+        const supplements = [];
+        const purchaseList = [];
+
+        for (const o of orders) {
+          const name = o.personName || '未命名';
+          const total = o.total ?? 0;
+          const paid = o.paid ?? 0;
+          const supplement = total - paid;
+
+          perPerson.push({
+            name,
+            items: o.items,
+            total,
+            paid,
+            supplement: supplement > 0 ? supplement : 0
+          });
+
+          if (supplement > 0) {
+            supplements.push({ name, amount: supplement, total, paid });
+          }
+
+          for (const it of o.items) {
+            const key = it.name;
+            itemTotal[key] = (itemTotal[key] || 0) + it.qty;
+          }
+        }
+
+        for (const [itemName, qty] of Object.entries(itemTotal)) {
+          purchaseList.push({ itemName, qty });
+        }
+        purchaseList.sort((a, b) => b.qty - a.qty);
+
+        return { perPerson, itemTotal, supplements, purchaseList };
+      }
+
+      function renderTable(headers, rows, cellRender) {
+        let html = '<table><thead><tr>';
+        headers.forEach(h => { html += '<th>' + h + '</th>'; });
+        html += '</tr></thead><tbody>';
+        rows.forEach(row => {
+          html += '<tr>';
+          cellRender(row).forEach(c => { html += '<td>' + c + '</td>'; });
+          html += '</tr>';
+        });
+        html += '</tbody></table>';
+        return html;
+      }
+
+      function run() {
+        try {
+        const text = rawEl && rawEl.value ? rawEl.value.trim() : '';
+        const summaryBar = document.getElementById('summaryBar');
+        if (!text) {
+          if (summaryBar) summaryBar.style.display = 'none';
+          if (copySupplementWrap) copySupplementWrap.style.display = 'none';
+          var custCard = document.getElementById('customerSummaryCard');
+          if (custCard) custCard.style.display = 'none';
+          var cpWrap = document.getElementById('copyPurchaseWrap');
+          if (cpWrap) cpWrap.style.display = 'none';
+          var mpa = document.getElementById('missingPriceAlert');
+          if (mpa) mpa.style.display = 'none';
+          if (perPersonBody) perPersonBody.innerHTML = '<p class="no-data">請先貼上喊單內容</p>';
+          if (perItemBody) perItemBody.innerHTML = '<p class="no-data">—</p>';
+          if (supplementBody) supplementBody.innerHTML = '<p class="no-data">—</p>';
+          if (purchaseListBody) purchaseListBody.innerHTML = '<p class="no-data">—</p>';
+          return;
+        }
+
+        const parsed = parseAll(text);
+        let perPerson, itemTotal, supplements, purchaseList;
+        if (parsed.mode === 'block') {
+          perPerson = parsed.perPerson;
+          itemTotal = parsed.itemTotal;
+          supplements = parsed.supplements;
+          purchaseList = parsed.purchaseList;
+        } else if (parsed.mode === 'tab') {
+          if (parsed.tabRows.length === 0) {
+            if (summaryBar) summaryBar.style.display = 'none';
+            if (copySupplementWrap) copySupplementWrap.style.display = 'none';
+            if (document.getElementById('customerSummaryCard')) document.getElementById('customerSummaryCard').style.display = 'none';
+            if (document.getElementById('copyPurchaseWrap')) document.getElementById('copyPurchaseWrap').style.display = 'none';
+            if (document.getElementById('missingPriceAlert')) document.getElementById('missingPriceAlert').style.display = 'none';
+            if (perPersonBody) perPersonBody.innerHTML = '<p class="no-data">無法解析出訂單</p>';
+            if (perItemBody) perItemBody.innerHTML = '<p class="no-data">—</p>';
+            if (supplementBody) supplementBody.innerHTML = '<p class="no-data">—</p>';
+            if (purchaseListBody) purchaseListBody.innerHTML = '<p class="no-data">—</p>';
+            return;
+          }
+          const agg = aggregateTab(parsed.tabRows);
+          perPerson = agg.perPerson;
+          itemTotal = agg.itemTotal;
+          supplements = agg.supplements;
+          purchaseList = agg.purchaseList;
+        } else {
+          if (parsed.orders.length === 0) {
+            if (summaryBar) summaryBar.style.display = 'none';
+            if (copySupplementWrap) copySupplementWrap.style.display = 'none';
+            if (document.getElementById('customerSummaryCard')) document.getElementById('customerSummaryCard').style.display = 'none';
+            if (document.getElementById('copyPurchaseWrap')) document.getElementById('copyPurchaseWrap').style.display = 'none';
+            if (document.getElementById('missingPriceAlert')) document.getElementById('missingPriceAlert').style.display = 'none';
+            if (perPersonBody) perPersonBody.innerHTML = '<p class="no-data">無法解析出訂單，請確認格式（每人一行品項x數量，或 姓名 Tab 品項+數量）</p>';
+            if (perItemBody) perItemBody.innerHTML = '<p class="no-data">—</p>';
+            if (supplementBody) supplementBody.innerHTML = '<p class="no-data">—</p>';
+            if (purchaseListBody) purchaseListBody.innerHTML = '<p class="no-data">—</p>';
+            return;
+          }
+          const agg = aggregate(parsed.orders);
+          perPerson = agg.perPerson;
+          itemTotal = agg.itemTotal;
+          supplements = agg.supplements;
+          purchaseList = agg.purchaseList;
+        }
+
+        // 喊單品項自動帶入「品項單價」欄位（僅帶品名，尚未填的會補上一行）
+        if ((parsed.mode === 'tab' || parsed.mode === 'line') && itemTotal) {
+          const pricesEl = document.getElementById('prices');
+          if (pricesEl) {
+            const existing = getExistingPriceItemNames(pricesEl.value);
+            const toAdd = [];
+            for (const key in itemTotal) { if (existing.indexOf(key) === -1) toAdd.push(key); }
+            if (toAdd.length > 0) {
+              const suffix = toAdd.map(function (n) { return n + ' '; }).join('\n');
+              pricesEl.value = (pricesEl.value.trim() ? pricesEl.value.trim() + '\n' : '') + suffix;
+            }
+          }
+        }
+
+        // 若有填「品項單價」，自動計算每人應付；訂金依「訂金金額」帶入
+        const pricesEl = document.getElementById('prices');
+        const priceMap = parsePriceList(pricesEl && pricesEl.value ? pricesEl.value.trim() : '');
+        var missingPriceAlertEl = document.getElementById('missingPriceAlert');
+        if (missingPriceAlertEl && (parsed.mode === 'tab' || parsed.mode === 'line') && itemTotal) {
+          var missing = [];
+          for (var k in itemTotal) {
+            var v = priceMap[k];
+            if (v == null) missing.push(k);
+            else if (typeof v === 'number' && (isNaN(v) || v <= 0)) missing.push(k);
+          }
+          if (missing.length > 0) {
+            missingPriceAlertEl.innerHTML = '<strong>以下品項尚未填寫單價：</strong>' + missing.join('、');
+            missingPriceAlertEl.style.display = 'block';
+          } else {
+            missingPriceAlertEl.style.display = 'none';
+          }
+        } else if (missingPriceAlertEl) {
+          missingPriceAlertEl.style.display = 'none';
+        }
+        const optDepositEl = document.getElementById('optDeposit');
+        const defaultDepositForAuto = (optDepositEl && optDepositEl.value.trim() !== '') ? parseInt(optDepositEl.value.trim(), 10) : 0;
+        if (Object.keys(priceMap).length > 0 && (parsed.mode === 'tab' || parsed.mode === 'line')) {
+          for (const p of perPerson) {
+            var tot = 0;
+            for (var i = 0; i < p.items.length; i++) {
+              var it = p.items[i];
+              tot += (it.qty || 0) * getUnitPrice(priceMap, it.name, it.qty);
+            }
+            p.total = tot;
+            p.paid = isNaN(defaultDepositForAuto) ? 0 : Math.min(defaultDepositForAuto, tot);
+            p.supplement = Math.max(0, tot - p.paid);
+          }
+          supplements = perPerson.filter(function (p) { return p.supplement > 0; }).map(function (p) {
+            return { name: p.name, total: p.total, paid: p.paid, amount: p.supplement };
+          });
+        }
+
+        // 若有填「每人應付與已收訂金」，覆寫並重算補款（可覆蓋自動計算）
+        const depositMap = parseDeposit(depositEl && depositEl.value ? depositEl.value.trim() : '');
+        if (Object.keys(depositMap).length > 0) {
+          for (const p of perPerson) {
+            const d = depositMap[p.name];
+            if (d) {
+              p.total = d.total;
+              p.paid = d.paid;
+              p.supplement = Math.max(0, d.total - d.paid);
+            }
+          }
+          supplements = perPerson.filter(p => p.supplement > 0).map(p => ({
+            name: p.name,
+            total: p.total,
+            paid: p.paid,
+            amount: p.supplement
+          }));
+        }
+
+        // 賣貨便運費：每人加上運費後重算應付總計與補款
+        const shippingEl = document.getElementById('optShipping');
+        const shipping = (shippingEl && shippingEl.value.trim() !== '') ? parseInt(shippingEl.value.trim(), 10) : 0;
+        const shippingNum = isNaN(shipping) ? 0 : Math.max(0, shipping);
+        for (const p of perPerson) {
+          p.shipping = shippingNum;
+          p.totalWithShipping = (p.total != null ? p.total : 0) + shippingNum;
+          p.supplement = Math.max(0, p.totalWithShipping - (p.paid != null ? p.paid : 0));
+        }
+        supplements = perPerson.filter(function (p) { return p.supplement > 0; }).map(function (p) {
+          return { name: p.name, total: p.totalWithShipping, paid: p.paid, amount: p.supplement };
+        });
+
+        if (summaryBar) {
+          var sumTotal = perPerson.reduce(function (s, p) { return s + (p.totalWithShipping != null ? p.totalWithShipping : 0); }, 0);
+          var sumPaid = perPerson.reduce(function (s, p) { return s + (p.paid != null ? p.paid : 0); }, 0);
+          var sumSupplement = perPerson.reduce(function (s, p) { return s + (p.supplement || 0); }, 0);
+          summaryBar.style.display = 'flex';
+          summaryBar.innerHTML =
+            '<span>共 ' + perPerson.length + ' 人</span>' +
+            '<span>' + purchaseList.length + ' 個品項</span>' +
+            '<span>總應付 NT$' + sumTotal + '</span>' +
+            '<span>總訂金 NT$' + sumPaid + '</span>' +
+            '<span>總須補款 NT$' + sumSupplement + '</span>' +
+            (supplements.length > 0 ? '<span>需補款 ' + supplements.length + ' 人</span>' : '');
+        }
+        var pdfTitle = (document.getElementById('optTitle') && document.getElementById('optTitle').value.trim()) || '訂單明細';
+        var pdfDateEl = document.getElementById('optDate');
+        var pdfDateVal = pdfDateEl && pdfDateEl.value ? pdfDateEl.value.trim() : '';
+        var pdfDateStr = pdfDateVal ? pdfDateVal.replace(/-/g, '/') : new Date().toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '/');
+        var pdfOrderIdStart = (document.getElementById('optOrderId') && document.getElementById('optOrderId').value.trim()) || '00100';
+        var pdfDefaultDeposit = (document.getElementById('optDeposit') && document.getElementById('optDeposit').value.trim()) || '';
+        var pdfShippingNum = (document.getElementById('optShipping') && document.getElementById('optShipping').value.trim());
+        pdfShippingNum = (pdfShippingNum !== '' && !isNaN(parseInt(pdfShippingNum, 10))) ? parseInt(pdfShippingNum, 10) : 0;
+        var pdfOrderIdNum = parseInt(String(pdfOrderIdStart).replace(/\D/g, ''), 10) || 100;
+        var pdfOrderIdPad = Math.max(5, (String(pdfOrderIdStart).replace(/\D/g, '') || '').length);
+        function padOrderIdPdf(n) { var s = String(n); while (s.length < pdfOrderIdPad) s = '0' + s; return s; }
+        var pdfLogo = window._logoDataUrl || (document.getElementById('optLogoUrl') && document.getElementById('optLogoUrl').value.trim()) || '';
+        var pdfStore = (document.getElementById('optStore') && document.getElementById('optStore').value.trim()) || '';
+        var pdfStoreAddr = (document.getElementById('optStoreAddr') && document.getElementById('optStoreAddr').value.trim()) || '';
+        var pdfShipDateEl = document.getElementById('optShipDate');
+        var pdfShipDateStr = (pdfShipDateEl && pdfShipDateEl.value) ? pdfShipDateEl.value.replace(/-/g, '/') : '';
+        window._lastPdfData = { perPerson: perPerson, title: pdfTitle, dateStr: pdfDateStr, orderIdNum: pdfOrderIdNum, padOrderId: padOrderIdPdf, defaultDeposit: pdfDefaultDeposit, shippingNum: pdfShippingNum, logoDataUrl: pdfLogo, storeName: pdfStore, storeAddr: pdfStoreAddr, shipDateStr: pdfShipDateStr };
+
+        // 每人訂單（含賣貨便運費、應付總計）
+        if (perPersonBody) perPersonBody.innerHTML = renderTable(
+          ['姓名', '品項明細', '應付(商品)', '賣貨便運費', '應付總計', '已付', '補款'],
+          perPerson,
+          (row) => [
+            row.name,
+            (row.items || []).map(i => i.name + '×' + i.qty).join('、') || '—',
+            row.total != null && row.total !== '' ? '<span class="amount">' + row.total + '</span>' : '—',
+            row.shipping != null ? '<span class="amount">' + (row.shipping || 0) + '</span>' : '0',
+            '<span class="amount">' + (row.totalWithShipping != null ? row.totalWithShipping : (row.total || 0) + (row.shipping || 0)) + '</span>',
+            row.paid != null && row.paid !== '' ? '<span class="amount">' + row.paid + '</span>' : '—',
+            row.supplement > 0 ? '<span class="supplement">' + row.supplement + '</span>' : '0'
+          ]
+        );
+
+        // 每個品項採購數
+        const itemRows = Object.entries(itemTotal).map(([name, qty]) => ({ name, qty }));
+        itemRows.sort((a, b) => b.qty - a.qty);
+        if (perItemBody) perItemBody.innerHTML = renderTable(
+          ['品項', '採購數量'],
+          itemRows,
+          (row) => [row.name, '<span class="amount">' + row.qty + '</span>']
+        );
+
+        // 補款明細與一鍵複製用文字
+        let supplementCopyText = '';
+        if (supplements.length === 0) {
+          if (supplementBody) supplementBody.innerHTML = '<p class="no-data">目前無需補款（可於上方填寫「品項單價」與「訂金金額」產生補款明細）</p>';
+          if (copySupplementWrap) copySupplementWrap.style.display = 'none';
+        } else {
+          if (supplementBody) supplementBody.innerHTML = renderTable(
+            ['姓名', '應付總計', '已收訂金', '須補款'],
+            supplements,
+            (row) => [
+              row.name,
+              row.total != null ? row.total : '—',
+              row.paid != null ? row.paid : '—',
+              '<span class="supplement amount">' + row.amount + '</span>'
+            ]
+          );
+          supplementCopyText = supplements.map(function (row) {
+            var paid = row.paid != null ? row.paid : 0;
+            if (paid > 0 && row.total != null) {
+              return row.name + ' 應付 ' + row.total + ' 元，已收訂金 ' + row.paid + ' 元，須補款 ' + row.amount + ' 元';
+            }
+            if (row.total != null) {
+              return row.name + ' 應付 ' + row.total + ' 元，須補款 ' + row.amount + ' 元';
+            }
+            return row.name + ' 須補款 ' + row.amount + ' 元';
+          }).join('\n');
+          if (copySupplementWrap) copySupplementWrap.style.display = 'block';
+        }
+        window._lastSupplementCopyText = supplementCopyText;
+
+        // 給客人明細（完整版）：依「給客人明細」設定為「每一位」客人產生一則明細，供一鍵複製與 PDF
+        var title = (document.getElementById('optTitle') && document.getElementById('optTitle').value.trim()) || '訂單明細';
+        var dateEl = document.getElementById('optDate');
+        var dateVal = dateEl && dateEl.value ? dateEl.value.trim() : '';
+        var dateStr = dateVal ? dateVal.replace(/-/g, '/') : new Date().toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '/');
+        var orderIdStart = (document.getElementById('optOrderId') && document.getElementById('optOrderId').value.trim()) || '00100';
+        var defaultDeposit = (document.getElementById('optDeposit') && document.getElementById('optDeposit').value.trim()) || '';
+        var orderIdNum = parseInt(orderIdStart.replace(/\D/g, ''), 10) || 100;
+        var orderIdPad = Math.max(5, (orderIdStart.replace(/\D/g, '') || '').length);
+        function padOrderId(n) {
+          var s = String(n);
+          while (s.length < orderIdPad) s = '0' + s;
+          return s;
+        }
+        var fullBlocksAll = [];
+        perPerson.forEach(function (p, idx) {
+          var items = (p.items || []);
+          var itemLines = items.map(function (it, i) {
+            var line = (i + 1) + '、' + it.name + '×' + it.qty;
+            if (it.price != null && !isNaN(it.price)) line += ' $' + it.price;
+            return line;
+          }).join('\n');
+          var totalQty = items.reduce(function (sum, it) { return sum + it.qty; }, 0);
+          var total = (p.totalWithShipping != null ? p.totalWithShipping : (p.total != null ? p.total : 0));
+          var paid = (p.paid != null ? p.paid : (defaultDeposit !== '' ? parseInt(defaultDeposit, 10) : 0));
+          if (isNaN(paid)) paid = 0;
+          var supplementAmt = (p.supplement != null ? p.supplement : Math.max(0, total - paid));
+          var orderId = padOrderId(orderIdNum + idx);
+          var depositLine = '訂金：NT$' + paid;
+          if (paid > 0) depositLine += '（' + dateStr + '已收）';
+          var block = title + '\n您的訂單編號：' + orderId + '\n🌟訂單成立：' + dateStr + '\n（@' + (p.name || '') + ') 的訂單如下：\n\n🛒預購款式：\n\n' + (itemLines || '—') + '\n\n數量：共 ' + totalQty + ' 款\n訂單總金額：NT$' + total + '\n' + depositLine + '\n賣貨便運費：NT$' + (p.shipping != null ? p.shipping : shippingNum) + '\n\n🚚待貨到結清金額：\n      NT$ ' + supplementAmt + '\n=（$' + total + '-$' + paid + ')\n\n📎 實際出貨後會再提供 PDF 明細給您。';
+          fullBlocksAll.push(block);
+        });
+        window._lastFullTemplateCopyText = fullBlocksAll.join('\n\n---\n\n');
+
+        // 給客人明細模板區塊：有統計結果時顯示，並顯示預覽摘要
+        var customerSummaryCard = document.getElementById('customerSummaryCard');
+        var customerSummaryWrap = document.getElementById('customerSummaryWrap');
+        var customerSummaryPreview = document.getElementById('customerSummaryPreview');
+        if (customerSummaryCard) customerSummaryCard.style.display = 'block';
+        if (customerSummaryWrap) customerSummaryWrap.style.display = 'block';
+        if (customerSummaryPreview) {
+          var firstBlock = fullBlocksAll[0];
+          var previewText = firstBlock ? (firstBlock.split('\n').slice(0, 6).join('\n') + '\n…') : '—';
+          customerSummaryPreview.innerHTML = '<pre class="template-preview-text">' + escapeHtmlForPreview(previewText) + '</pre><p class="template-preview-note">共 ' + perPerson.length + ' 人，可一鍵複製或產生 PDF</p>';
+        }
+        function escapeHtmlForPreview(s) {
+          if (!s) return '';
+          var div = document.createElement('div');
+          div.textContent = s;
+          return div.innerHTML;
+        }
+
+        // 採購清單（給團主採買用）與一鍵複製
+        if (purchaseListBody) purchaseListBody.innerHTML = renderTable(
+          ['品項', '數量'],
+          purchaseList,
+          (row) => [row.itemName, '<span class="amount">' + row.qty + '</span>']
+        );
+        var purchaseCopyText = purchaseList.map(function (row) { return row.itemName + '\t' + row.qty; }).join('\n');
+        window._lastPurchaseListCopyText = purchaseCopyText;
+        var copyPurchaseWrap = document.getElementById('copyPurchaseWrap');
+        if (copyPurchaseWrap) copyPurchaseWrap.style.display = purchaseList.length > 0 ? 'block' : 'none';
+
+        saveTemplateOptions();
+
+        } catch (err) {
+          console.error(err);
+          if (perPersonBody) perPersonBody.innerHTML = '<p class="no-data">統計時發生錯誤，請檢查喊單格式。</p>';
+          if (supplementBody) supplementBody.innerHTML = '<p class="no-data">—</p>';
+          alert('統計時發生錯誤：' + (err && err.message ? err.message : '請檢查喊單格式後再試'));
+        }
+      }
+
+      var TEMPLATE_STORAGE_KEY = 'line_order_tool_template';
+      function saveTemplateOptions() {
+        try {
+          var logoData = (typeof window._logoDataUrl === 'string' && window._logoDataUrl) ? window._logoDataUrl : '';
+          if (logoData.length > 450000) logoData = '';
+          var o = {
+            title: (document.getElementById('optTitle') && document.getElementById('optTitle').value) || '',
+            date: (document.getElementById('optDate') && document.getElementById('optDate').value) || '',
+            orderId: (document.getElementById('optOrderId') && document.getElementById('optOrderId').value) || '',
+            deposit: (document.getElementById('optDeposit') && document.getElementById('optDeposit').value) || '',
+            shipping: (document.getElementById('optShipping') && document.getElementById('optShipping').value) || '',
+            logoUrl: (document.getElementById('optLogoUrl') && document.getElementById('optLogoUrl').value) || '',
+            store: (document.getElementById('optStore') && document.getElementById('optStore').value) || '',
+            storeAddr: (document.getElementById('optStoreAddr') && document.getElementById('optStoreAddr').value) || '',
+            shipDate: (document.getElementById('optShipDate') && document.getElementById('optShipDate').value) || '',
+            logoDataUrl: logoData
+          };
+          localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(o));
+        } catch (e) {}
+      }
+      function loadTemplateOptions() {
+        try {
+          var s = localStorage.getItem(TEMPLATE_STORAGE_KEY);
+          if (!s) return;
+          var o = JSON.parse(s);
+          var el;
+          if (o.title && (el = document.getElementById('optTitle'))) el.value = o.title;
+          if (o.date && (el = document.getElementById('optDate'))) el.value = o.date;
+          if (o.orderId && (el = document.getElementById('optOrderId'))) el.value = o.orderId;
+          if (o.deposit != null && (el = document.getElementById('optDeposit'))) el.value = o.deposit;
+          if (o.shipping != null && (el = document.getElementById('optShipping'))) el.value = o.shipping;
+          if (o.logoUrl != null && (el = document.getElementById('optLogoUrl'))) el.value = o.logoUrl;
+          if (o.store != null && (el = document.getElementById('optStore'))) el.value = o.store;
+          if (o.storeAddr != null && (el = document.getElementById('optStoreAddr'))) el.value = o.storeAddr;
+          if (o.shipDate != null && (el = document.getElementById('optShipDate'))) el.value = o.shipDate;
+          if (o.logoDataUrl) {
+            window._logoDataUrl = o.logoDataUrl;
+            var wrap = document.getElementById('logoPreviewWrap');
+            var img = document.getElementById('logoPreview');
+            if (wrap && img) { img.src = o.logoDataUrl; wrap.style.display = 'inline-block'; }
+          }
+        } catch (e) {}
+      }
+      (function setDefaultDate() {
+        var el = document.getElementById('optDate');
+        if (el && !el.value) {
+          var d = new Date();
+          el.value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        }
+      })();
+      loadTemplateOptions();
+
+      var PRICE_TEMPLATES_KEY = 'line_order_price_templates';
+      function getPriceTemplates() {
+        try {
+          var s = localStorage.getItem(PRICE_TEMPLATES_KEY);
+          return s ? JSON.parse(s) : {};
+        } catch (e) { return {}; }
+      }
+      function savePriceTemplate(name, content) {
+        var t = getPriceTemplates();
+        t[name] = content;
+        try { localStorage.setItem(PRICE_TEMPLATES_KEY, JSON.stringify(t)); } catch (e) {}
+      }
+      function deletePriceTemplate(name) {
+        var t = getPriceTemplates();
+        delete t[name];
+        try { localStorage.setItem(PRICE_TEMPLATES_KEY, JSON.stringify(t)); } catch (e) {}
+      }
+      function refreshPriceTemplateSelect() {
+        var sel = document.getElementById('loadPriceTemplate');
+        if (!sel) return;
+        var templates = getPriceTemplates();
+        var names = Object.keys(templates);
+        sel.innerHTML = '';
+        var defaultOpt = document.createElement('option');
+        defaultOpt.value = '';
+        defaultOpt.textContent = '— 請選擇 —';
+        sel.appendChild(defaultOpt);
+        names.forEach(function (n, i) {
+          var opt = document.createElement('option');
+          opt.value = String(i);
+          opt.textContent = n;
+          sel.appendChild(opt);
+        });
+      }
+      refreshPriceTemplateSelect();
+      var savePriceTemplateBtn = document.getElementById('savePriceTemplateBtn');
+      if (savePriceTemplateBtn) savePriceTemplateBtn.addEventListener('click', function () {
+        var pricesEl = document.getElementById('prices');
+        var name = prompt('請輸入範本名稱（例如：布丁狗團）');
+        if (!name || !name.trim()) return;
+        savePriceTemplate(name.trim(), pricesEl ? pricesEl.value : '');
+        refreshPriceTemplateSelect();
+        alert('已儲存範本：「' + name.trim() + '」');
+      });
+      var loadPriceTemplateEl = document.getElementById('loadPriceTemplate');
+      if (loadPriceTemplateEl) loadPriceTemplateEl.addEventListener('change', function () {
+        var val = this.value;
+        if (val === '' || val === undefined) return;
+        var templates = getPriceTemplates();
+        var names = Object.keys(templates);
+        var idx = parseInt(val, 10);
+        if (isNaN(idx) || idx < 0 || idx >= names.length) return;
+        var content = templates[names[idx]];
+        var pricesEl = document.getElementById('prices');
+        if (pricesEl && content != null) pricesEl.value = content;
+      });
+      var deletePriceTemplateBtn = document.getElementById('deletePriceTemplateBtn');
+      if (deletePriceTemplateBtn) deletePriceTemplateBtn.addEventListener('click', function () {
+        var sel = document.getElementById('loadPriceTemplate');
+        if (!sel || sel.value === '') {
+          alert('請先從「載入範本」選擇要刪除的範本');
+          return;
+        }
+        var templates = getPriceTemplates();
+        var names = Object.keys(templates);
+        var idx = parseInt(sel.value, 10);
+        if (isNaN(idx) || idx < 0 || idx >= names.length) return;
+        var name = names[idx];
+        if (!confirm('確定要刪除範本「' + name + '」嗎？')) return;
+        deletePriceTemplate(name);
+        refreshPriceTemplateSelect();
+        alert('已刪除範本：「' + name + '」');
+      });
+
+      ['optTitle', 'optDate', 'optOrderId', 'optDeposit', 'optShipping', 'optLogoUrl', 'optStore', 'optStoreAddr', 'optShipDate'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener('change', saveTemplateOptions);
+      });
+      (function initLogoUpload() {
+        var fileEl = document.getElementById('optLogoFile');
+        var urlEl = document.getElementById('optLogoUrl');
+        var previewWrap = document.getElementById('logoPreviewWrap');
+        var previewImg = document.getElementById('logoPreview');
+        if (fileEl) fileEl.addEventListener('change', function () {
+          var f = this.files && this.files[0];
+          if (!f || !f.type.match(/^image\//)) return;
+          var r = new FileReader();
+          r.onload = function () {
+            window._logoDataUrl = r.result;
+            if (urlEl) urlEl.value = '';
+            if (previewImg) previewImg.src = r.result;
+            if (previewWrap) previewWrap.style.display = 'inline-block';
+            saveTemplateOptions();
+          };
+          r.readAsDataURL(f);
+        });
+        if (urlEl && previewImg && previewWrap) {
+          urlEl.addEventListener('input', function () {
+            var v = this.value.trim();
+            if (v) {
+              window._logoDataUrl = '';
+              saveTemplateOptions();
+              previewImg.src = v;
+              previewImg.onerror = function () { previewWrap.style.display = 'none'; };
+              previewImg.onload = function () { previewWrap.style.display = 'inline-block'; };
+              if (v.startsWith('data:')) previewWrap.style.display = 'inline-block';
+            } else {
+              previewWrap.style.display = 'none';
+              saveTemplateOptions();
+            }
+          });
+          if (urlEl.value.trim()) {
+            previewImg.src = urlEl.value.trim();
+            previewImg.onload = function () { previewWrap.style.display = 'inline-block'; };
+            previewImg.onerror = function () {};
+            if (urlEl.value.trim().startsWith('data:')) previewWrap.style.display = 'inline-block';
+          }
+        }
+        var clearLogoBtn = document.getElementById('clearLogoBtn');
+        if (clearLogoBtn) clearLogoBtn.addEventListener('click', function () {
+          window._logoDataUrl = '';
+          if (urlEl) urlEl.value = '';
+          if (previewWrap) previewWrap.style.display = 'none';
+          if (previewImg) previewImg.src = '';
+          saveTemplateOptions();
+        });
+      })();
+
+      if (parseBtn) parseBtn.addEventListener('click', run);
+      var autoRunTimer;
+      if (rawEl) {
+        rawEl.addEventListener('input', function () {
+          clearTimeout(autoRunTimer);
+          autoRunTimer = setTimeout(function () {
+            if (rawEl.value.trim()) run();
+          }, 800);
+        });
+      }
+      if (clearBtn) {
+        clearBtn.addEventListener('click', function () {
+          if (rawEl) rawEl.value = '';
+          var pricesInput = document.getElementById('prices');
+          if (pricesInput) pricesInput.value = '';
+          if (depositEl) depositEl.value = '';
+          run();
+        });
+      }
+      copySupplementBtn.addEventListener('click', function () {
+        const text = window._lastSupplementCopyText || '';
+        if (!text) return;
+        navigator.clipboard.writeText(text).then(function () {
+          copySupplementBtn.textContent = '✓ 已複製！';
+          setTimeout(function () {
+            copySupplementBtn.textContent = '📋 一鍵複製補款明細（簡短版）';
+          }, 2000);
+        }).catch(function () {
+          alert('無法複製，請手動選取補款明細區塊文字複製');
+        });
+      });
+      var copyPurchaseBtn = document.getElementById('copyPurchaseBtn');
+      if (copyPurchaseBtn) copyPurchaseBtn.addEventListener('click', function () {
+        var text = window._lastPurchaseListCopyText || '';
+        if (!text) return;
+        navigator.clipboard.writeText(text).then(function () {
+          copyPurchaseBtn.textContent = '✓ 已複製！';
+          setTimeout(function () { copyPurchaseBtn.textContent = '📋 一鍵複製採購清單'; }, 2000);
+        }).catch(function () { alert('無法複製'); });
+      });
+      document.getElementById('copyFullTemplateBtn').addEventListener('click', function () {
+        const text = window._lastFullTemplateCopyText || '';
+        if (!text) return;
+        navigator.clipboard.writeText(text).then(function () {
+          this.textContent = '✓ 已複製！可貼到 LINE 傳給客人';
+          var btn = this;
+          setTimeout(function () {
+            btn.textContent = '📋 一鍵複製給客人明細';
+          }, 2000);
+        }.bind(this)).catch(function () {
+          alert('無法複製，請手動選取複製');
+        });
+      });
+
+      document.getElementById('generatePdfBtn').addEventListener('click', function () {
+        var data = window._lastPdfData;
+        if (!data || !data.perPerson || data.perPerson.length === 0) {
+          alert('請先貼上喊單並完成統計，再產生 PDF');
+          return;
+        }
+        var html = '';
+        var title = data.title || '訂單明細';
+        var dateStr = data.dateStr || '';
+        var defaultDeposit = data.defaultDeposit || '';
+        var shippingNum = data.shippingNum || 0;
+        var orderIdNum = data.orderIdNum;
+        var padOrderId = data.padOrderId;
+        var logoSrc = (data.logoDataUrl || '').trim();
+        var storeName = (data.storeName || '').trim();
+        var storeAddr = (data.storeAddr || '').trim();
+        var shipDateStr = (data.shipDateStr || '').trim();
+        var pdfPageStyle = 'width:100%;border-collapse:collapse;font-family:Microsoft JhengHei,sans-serif;font-size:11pt;color:#333;';
+        var pdfThStyle = 'background:#4a4a4a;color:#fff;padding:8px 10px;text-align:left;font-weight:bold;border:1px solid #333;';
+        var pdfTdStyle = 'padding:6px 10px;border:1px solid #ddd;';
+        var pdfBoxBorder = 'border:1px solid #333;padding:8px 10px;';
+
+        var pageHtmls = [];
+        data.perPerson.forEach(function (p, i) {
+          var orderId = padOrderId(orderIdNum + i);
+          var total = (p.totalWithShipping != null ? p.totalWithShipping : (p.total != null ? p.total : 0));
+          var paid = (p.paid != null ? p.paid : 0);
+          var ship = (p.shipping != null ? p.shipping : shippingNum);
+          var supplement = (p.supplement != null ? p.supplement : Math.max(0, total - paid));
+          var subtotal = (p.total != null ? p.total : 0);
+          var items = (p.items || []);
+
+          var one = '<div style="width:794px;height:1123px;box-sizing:border-box;padding:24px;background:#fff;page-break-after:always;">';
+          one += '<table style="' + pdfPageStyle + '"><tr>';
+          one += '<td style="background:#4a4a4a;color:#fff;padding:12px 16px;font-size:16pt;font-weight:bold;width:38%;border:1px solid #333;">' + escapeHtml(title) + '</td>';
+          one += '<td style="background:#e8b4bc;padding:12px 16px;width:62%;border:1px solid #ccc;vertical-align:middle;">';
+          if (logoSrc) one += '<img src="' + String(logoSrc).replace(/"/g, '&quot;') + '" alt="" style="max-height:48px;max-width:200px;object-fit:contain;display:block;" />';
+          one += '</td></tr></table>';
+          one += '<table style="' + pdfPageStyle + 'margin-top:12px;"><tr><td style="vertical-align:top;padding-right:16px;">';
+          one += '<div style="line-height:1.8;">';
+          one += '<div>客戶姓名：' + escapeHtml(p.name || '') + '</div>';
+          if (storeName) one += '<div>取貨門市：' + escapeHtml(storeName) + '</div>';
+          if (storeAddr) one += '<div>門市地址：' + escapeHtml(storeAddr) + '</div>';
+          one += '</div></td><td style="vertical-align:top;width:220px;">';
+          one += '<div style="' + pdfBoxBorder + '">';
+          one += '<div style="text-align:right;margin-bottom:4px;">訂單編號：' + escapeHtml(orderId) + '</div>';
+          one += '<div style="text-align:right;margin-bottom:4px;">預購日期：' + escapeHtml(dateStr) + '</div>';
+          if (shipDateStr) one += '<div style="text-align:right;">出貨日期：' + escapeHtml(shipDateStr) + '</div>';
+          one += '</div></td></tr></table>';
+          one += '<table style="' + pdfPageStyle + 'margin-top:12px;width:100%;"><thead><tr>';
+          one += '<th style="' + pdfThStyle + 'width:50px;">編號</th><th style="' + pdfThStyle + '">品項</th><th style="' + pdfThStyle + 'width:70px;">數量</th><th style="' + pdfThStyle + 'width:80px;">單價</th><th style="' + pdfThStyle + 'width:80px;">金額</th></tr></thead><tbody>';
+          items.forEach(function (it, idx) {
+            var unitPrice = (it.price != null && !isNaN(it.price)) ? it.price : 0;
+            var qty = (it.qty != null && !isNaN(it.qty)) ? it.qty : 0;
+            var amount = unitPrice * qty;
+            one += '<tr><td style="' + pdfTdStyle + '">' + (idx + 1) + '</td><td style="' + pdfTdStyle + '">' + escapeHtml(it.name || '') + '</td><td style="' + pdfTdStyle + '">' + qty + '</td><td style="' + pdfTdStyle + '">$' + unitPrice + '</td><td style="' + pdfTdStyle + '">$' + amount + '</td></tr>';
+          });
+          one += '</tbody></table>';
+          one += '<table style="' + pdfPageStyle + 'margin-top:12px;"><tr><td style="vertical-align:top;width:55%;">';
+          one += '<div style="background:#f9e076;color:#000;padding:4px 10px;font-weight:bold;width:fit-content;margin-bottom:4px;">備註</div>';
+          one += '<div style="' + pdfBoxBorder + 'min-height:60px;">訂金：NT$' + paid + (dateStr ? ' (' + escapeHtml(dateStr) + ')' : '') + '</div>';
+          one += '</td><td style="vertical-align:top;text-align:right;">';
+          one += '<table style="margin-left:auto;border-collapse:collapse;font-size:11pt;">';
+          one += '<tr><td style="padding:4px 12px 4px 0;border-bottom:1px solid #ddd;">小計</td><td style="padding:4px 0;border-bottom:1px solid #ddd;">$' + subtotal + '</td></tr>';
+          one += '<tr><td style="padding:4px 12px 4px 0;border-bottom:1px solid #ddd;">預購訂金</td><td style="padding:4px 0;border-bottom:1px solid #ddd;">$' + paid + '</td></tr>';
+          one += '<tr><td style="padding:4px 12px 4px 0;border-bottom:1px solid #ddd;">折扣</td><td style="padding:4px 0;border-bottom:1px solid #ddd;">—</td></tr>';
+          one += '<tr><td style="padding:4px 12px 4px 0;border-bottom:1px solid #ddd;">優惠</td><td style="padding:4px 0;border-bottom:1px solid #ddd;">—</td></tr>';
+          one += '<tr><td style="padding:4px 12px 4px 0;border-bottom:1px solid #ddd;">運費</td><td style="padding:4px 0;border-bottom:1px solid #ddd;">' + (ship > 0 ? '$' + ship : '—') + '</td></tr>';
+          one += '<tr><td style="padding:4px 12px 4px 0;border-bottom:1px solid #ddd;">補款</td><td style="padding:4px 0;border-bottom:1px solid #ddd;">$' + supplement + '</td></tr>';
+          one += '<tr><td style="padding:6px 12px 4px 0;">金額</td><td style="padding:6px 0 4px 0;">$' + total + '</td></tr></table></td></tr></table>';
+          one += '</div>';
+          pageHtmls.push(one);
+        });
+
+        var btn = this;
+        var origText = btn.textContent;
+        btn.textContent = '產生中…';
+        btn.disabled = true;
+        var filename = (title.replace(/[/\\?%*:|"<>]/g, '_') || '購買明細') + '_購買明細.pdf';
+        var pdfOpts = { margin: 6, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 1.5, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }, pagebreak: { mode: ['css', 'legacy'], before: '.page-break-before', after: '.page-break-after', avoid: 'tr' };
+
+        function cleanup() {
+          var w = document.getElementById('pdfTempWrap');
+          if (w && w.parentNode) w.parentNode.removeChild(w);
+          btn.textContent = origText;
+          btn.disabled = false;
+        }
+
+        function waitForImgs(container) {
+          var imgs = container.querySelectorAll('img');
+          var arr = Array.prototype.map.call(imgs, function (img) {
+            if (img.complete) return Promise.resolve();
+            return new Promise(function (resolve) {
+              img.onload = resolve;
+              img.onerror = resolve;
+              setTimeout(resolve, 3000);
+            });
+          });
+          return Promise.all(arr);
+        }
+
+        function addPageBreakClass(html) {
+          return html.replace(/<div style="[^"]*page-break-after:always/g, '<div class="page-break-after" style="');
+        }
+
+        var allHtml = pageHtmls.map(addPageBreakClass).join('');
+        var wrap = document.createElement('div');
+        wrap.id = 'pdfTempWrap';
+        wrap.setAttribute('style', 'position:fixed;left:0;top:0;width:794px;background:#fff;padding:0;box-sizing:border-box;z-index:99999;font-family:Microsoft JhengHei,sans-serif;');
+        wrap.innerHTML = allHtml;
+        document.body.appendChild(wrap);
+
+        waitForImgs(wrap).then(function () {
+          return new Promise(function (r) { requestAnimationFrame(function () { setTimeout(r, 300); }); });
+        }).then(function () {
+          var el = document.getElementById('pdfTempWrap');
+          if (!el) { cleanup(); return; }
+          html2pdf().set(pdfOpts).from(el).save().then(cleanup).catch(function (err) {
+            cleanup();
+            console.error(err);
+            alert('產生 PDF 時發生錯誤，請再試一次');
+          });
+        });
+      });
+
+      function escapeHtml(s) {
+        if (s == null) return '';
+        var t = document.createElement('span');
+        t.textContent = s;
+        return t.innerHTML;
+      }
+      function escapeAttr(s) {
+        if (s == null) return '';
+        return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      }
+    })();
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  </script>
+</body>
+</html>
