@@ -108,24 +108,6 @@
     .input-section .deposit-label { margin-top: 1.5rem; display: block; }
     .input-section #deposit { min-height: 100px; margin-top: 0.5rem; }
 
-    .price-template-row {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 0.75rem;
-      margin-top: 0.5rem;
-    }
-
-    .template-load-wrap label { margin: 0; font-weight: 500; font-size: 0.9rem; }
-    .template-load-wrap select {
-      padding: 0.4rem 0.75rem;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      font-family: var(--font-sans);
-      font-size: 0.9rem;
-      background: var(--card);
-    }
-
     .missing-price-alert {
       margin-top: 1rem;
       padding: 0.85rem 1rem;
@@ -180,6 +162,7 @@
     .logo-preview-wrap img { max-height: 36px; max-width: 120px; object-fit: contain; vertical-align: middle; }
     .clear-logo-btn { padding: 0.2rem 0.5rem; font-size: 0.75rem; background: transparent; border: 1px solid var(--border); border-radius: var(--radius-sm); color: #666; cursor: pointer; }
     .clear-logo-btn:hover { background: #f5f5f5; color: #333; }
+    .logo-hint { margin-top: 0.25rem; margin-bottom: 0; font-size: 0.85rem; }
 
     textarea {
       width: 100%;
@@ -366,16 +349,6 @@
 
       <label for="prices" class="deposit-label">品項單價（選填，用於自動計算應付與訂金）</label>
       <textarea id="prices" placeholder="每行一筆：品項 單價&#10;或 階梯價：品項 預設單價 滿N個 每個M元&#10;例：薄荷巧克力布丁狗 380&#10;例：薄荷巧克力布丁狗 400 3 380（買3個以上每個380）"></textarea>
-      <div class="price-template-row">
-        <button type="button" class="secondary" id="savePriceTemplateBtn">儲存為範本</button>
-        <span class="template-load-wrap">
-          <label for="loadPriceTemplate">載入範本：</label>
-          <select id="loadPriceTemplate">
-            <option value="">— 請選擇 —</option>
-          </select>
-        </span>
-        <button type="button" class="secondary" id="deletePriceTemplateBtn">刪除所選範本</button>
-      </div>
       <p class="hint">按「開始統計」後會自動帶入喊單出現的品項名稱，您只需補上單價。支援階梯價：<strong>品項 預設 滿N 每個M</strong>（如 品項 400 3 380 = 買3個以上每個380）。</p>
 
       <div id="missingPriceAlert" class="missing-price-alert" style="display: none;"></div>
@@ -405,11 +378,12 @@
         <div class="template-row">
           <label>品牌 Logo</label>
           <span class="logo-input-wrap">
-            <input type="text" id="optLogoUrl" placeholder="圖片網址（或下方上傳）" />
+            <input type="text" id="optLogoUrl" placeholder="圖片網址、或同目錄檔名（如 logo.png）" />
             <label class="upload-logo-btn">上傳圖片<input type="file" id="optLogoFile" accept="image/*" style="display:none" /></label>
           </span>
           <span id="logoPreviewWrap" class="logo-preview-wrap" style="display:none;"><img id="logoPreview" alt="Logo" style="max-height:36px;" /><button type="button" class="clear-logo-btn" id="clearLogoBtn" title="清除已儲存的 Logo">清除</button></span>
         </div>
+        <p class="hint logo-hint">若將 <strong>index.html</strong> 與 logo 圖片（如 <strong>logo.png</strong>）一起上傳到 GitHub 同目錄，在此填 <strong>logo.png</strong> 並用 GitHub Pages 開啟頁面，一鍵產生 PDF 即可自動套用，不需每次上傳。</p>
         <div class="template-row">
           <label>取貨門市</label>
           <input type="text" id="optStore" placeholder="例：博愛門市、7-11 某某門市" />
@@ -472,6 +446,7 @@
   </div>
   <div id="pdfContainer" style="position:absolute;left:-9999px;top:0;width:210mm;min-height:297mm;background:#fff;padding:12mm;font-family:Microsoft JhengHei,sans-serif;font-size:11pt;line-height:1.5;color:#333;box-sizing:border-box;"></div>
 
+  <script src="jspdf.umd.min.js"></script>
   <script src="html2pdf.bundle.min.js"></script>
   <script>
     function init() {
@@ -1160,80 +1135,6 @@
       })();
       loadTemplateOptions();
 
-      var PRICE_TEMPLATES_KEY = 'line_order_price_templates';
-      function getPriceTemplates() {
-        try {
-          var s = localStorage.getItem(PRICE_TEMPLATES_KEY);
-          return s ? JSON.parse(s) : {};
-        } catch (e) { return {}; }
-      }
-      function savePriceTemplate(name, content) {
-        var t = getPriceTemplates();
-        t[name] = content;
-        try { localStorage.setItem(PRICE_TEMPLATES_KEY, JSON.stringify(t)); } catch (e) {}
-      }
-      function deletePriceTemplate(name) {
-        var t = getPriceTemplates();
-        delete t[name];
-        try { localStorage.setItem(PRICE_TEMPLATES_KEY, JSON.stringify(t)); } catch (e) {}
-      }
-      function refreshPriceTemplateSelect() {
-        var sel = document.getElementById('loadPriceTemplate');
-        if (!sel) return;
-        var templates = getPriceTemplates();
-        var names = Object.keys(templates);
-        sel.innerHTML = '';
-        var defaultOpt = document.createElement('option');
-        defaultOpt.value = '';
-        defaultOpt.textContent = '— 請選擇 —';
-        sel.appendChild(defaultOpt);
-        names.forEach(function (n, i) {
-          var opt = document.createElement('option');
-          opt.value = String(i);
-          opt.textContent = n;
-          sel.appendChild(opt);
-        });
-      }
-      refreshPriceTemplateSelect();
-      var savePriceTemplateBtn = document.getElementById('savePriceTemplateBtn');
-      if (savePriceTemplateBtn) savePriceTemplateBtn.addEventListener('click', function () {
-        var pricesEl = document.getElementById('prices');
-        var name = prompt('請輸入範本名稱（例如：布丁狗團）');
-        if (!name || !name.trim()) return;
-        savePriceTemplate(name.trim(), pricesEl ? pricesEl.value : '');
-        refreshPriceTemplateSelect();
-        alert('已儲存範本：「' + name.trim() + '」');
-      });
-      var loadPriceTemplateEl = document.getElementById('loadPriceTemplate');
-      if (loadPriceTemplateEl) loadPriceTemplateEl.addEventListener('change', function () {
-        var val = this.value;
-        if (val === '' || val === undefined) return;
-        var templates = getPriceTemplates();
-        var names = Object.keys(templates);
-        var idx = parseInt(val, 10);
-        if (isNaN(idx) || idx < 0 || idx >= names.length) return;
-        var content = templates[names[idx]];
-        var pricesEl = document.getElementById('prices');
-        if (pricesEl && content != null) pricesEl.value = content;
-      });
-      var deletePriceTemplateBtn = document.getElementById('deletePriceTemplateBtn');
-      if (deletePriceTemplateBtn) deletePriceTemplateBtn.addEventListener('click', function () {
-        var sel = document.getElementById('loadPriceTemplate');
-        if (!sel || sel.value === '') {
-          alert('請先從「載入範本」選擇要刪除的範本');
-          return;
-        }
-        var templates = getPriceTemplates();
-        var names = Object.keys(templates);
-        var idx = parseInt(sel.value, 10);
-        if (isNaN(idx) || idx < 0 || idx >= names.length) return;
-        var name = names[idx];
-        if (!confirm('確定要刪除範本「' + name + '」嗎？')) return;
-        deletePriceTemplate(name);
-        refreshPriceTemplateSelect();
-        alert('已刪除範本：「' + name + '」');
-      });
-
       ['optTitle', 'optDate', 'optOrderId', 'optDeposit', 'optShipping', 'optLogoUrl', 'optStore', 'optStoreAddr', 'optShipDate'].forEach(function (id) {
         var el = document.getElementById(id);
         if (el) el.addEventListener('change', saveTemplateOptions);
@@ -1421,7 +1322,7 @@
         btn.textContent = '產生中…';
         btn.disabled = true;
         var filename = (title.replace(/[/\\?%*:|"<>]/g, '_') || '購買明細') + '_購買明細.pdf';
-        var pdfOpts = { margin: 6, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 1.5, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }, pagebreak: { mode: ['css', 'legacy'], before: '.page-break-before', after: '.page-break-after', avoid: 'tr' };
+        var pdfOpts = { margin: 0, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 1.5, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
 
         function cleanup() {
           var w = document.getElementById('pdfTempWrap');
@@ -1443,28 +1344,63 @@
           return Promise.all(arr);
         }
 
-        function addPageBreakClass(html) {
-          return html.replace(/<div style="[^"]*page-break-after:always/g, '<div class="page-break-after" style="');
-        }
+        (function runPageByPage(idx, pdfInst) {
+          if (idx >= pageHtmls.length) {
+            if (pdfInst) pdfInst.save(filename);
+            cleanup();
+            return;
+          }
+          var wrap = document.createElement('div');
+          wrap.id = 'pdfTempWrap';
+          wrap.setAttribute('style', 'position:fixed;left:0;top:0;width:794px;height:1123px;overflow:visible;background:#fff;padding:24px;box-sizing:border-box;z-index:99999;font-family:Microsoft JhengHei,sans-serif;');
+          wrap.innerHTML = pageHtmls[idx];
+          document.body.appendChild(wrap);
 
-        var allHtml = pageHtmls.map(addPageBreakClass).join('');
-        var wrap = document.createElement('div');
-        wrap.id = 'pdfTempWrap';
-        wrap.setAttribute('style', 'position:fixed;left:0;top:0;width:794px;background:#fff;padding:0;box-sizing:border-box;z-index:99999;font-family:Microsoft JhengHei,sans-serif;');
-        wrap.innerHTML = allHtml;
-        document.body.appendChild(wrap);
-
-        waitForImgs(wrap).then(function () {
-          return new Promise(function (r) { requestAnimationFrame(function () { setTimeout(r, 300); }); });
-        }).then(function () {
-          var el = document.getElementById('pdfTempWrap');
-          if (!el) { cleanup(); return; }
-          html2pdf().set(pdfOpts).from(el).save().then(cleanup).catch(function (err) {
+          waitForImgs(wrap).then(function () {
+            return new Promise(function (r) { requestAnimationFrame(function () { setTimeout(r, 400); }); });
+          }).then(function () {
+            var el = document.getElementById('pdfTempWrap');
+            if (!el) { cleanup(); return; }
+            el.scrollIntoView({ block: 'start', behavior: 'auto' });
+            var forceReflow = el.offsetHeight;
+            return html2pdf().set(pdfOpts).from(el).toCanvas().get('canvas').then(function (canvas) {
+              var imgData = canvas.toDataURL('image/jpeg', 0.98);
+              var pdf = pdfInst;
+              if (idx === 0) {
+                var jsPDF = (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : (window.jsPDF || null);
+                if (jsPDF) {
+                  pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+                  pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+                  if (el.parentNode) el.parentNode.removeChild(el);
+                  runPageByPage(idx + 1, pdf);
+                } else {
+                  return html2pdf().set(pdfOpts).from(el).toPdf().get('pdf').then(function (p) {
+                    if (el.parentNode) el.parentNode.removeChild(el);
+                    runPageByPage(idx + 1, p);
+                  });
+                }
+              } else {
+                pdfInst.addPage('a4', 'portrait');
+                pdfInst.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+                if (el.parentNode) el.parentNode.removeChild(el);
+                runPageByPage(idx + 1, pdfInst);
+              }
+            }).catch(function (canvasErr) {
+              if (idx === 0) {
+                return html2pdf().set(pdfOpts).from(el).toPdf().get('pdf').then(function (pdf) {
+                  if (el.parentNode) el.parentNode.removeChild(el);
+                  runPageByPage(idx + 1, pdf);
+                });
+              }
+              if (el.parentNode) el.parentNode.removeChild(el);
+              runPageByPage(idx + 1, pdfInst);
+            });
+          }).catch(function (err) {
             cleanup();
             console.error(err);
             alert('產生 PDF 時發生錯誤，請再試一次');
           });
-        });
+        })(0, null);
       });
 
       function escapeHtml(s) {
