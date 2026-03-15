@@ -91,6 +91,24 @@
       border-left: 4px solid var(--accent);
     }
 
+    .label-with-hint {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+    }
+    .label-with-hint label { margin-bottom: 0; }
+    .label-hint {
+      font-size: 0.8rem;
+      color: var(--ink-muted, #6b6560);
+      font-weight: 400;
+      white-space: nowrap;
+    }
+    @media (max-width: 640px) {
+      .label-with-hint { flex-wrap: wrap; }
+      .label-hint { white-space: normal; }
+    }
     .input-section label {
       display: block;
       font-weight: 600;
@@ -145,6 +163,12 @@
       font-family: var(--font-sans);
       font-size: 0.9rem;
     }
+    .template-row-original label { color: var(--teal); font-weight: 600; }
+    .template-row-original input { border-color: rgba(45, 106, 106, 0.35); background: #f8fcfc; }
+    .template-row-original input:focus { border-color: var(--teal); outline: none; }
+    .template-row-addon label { color: #e65100; font-weight: 600; }
+    .template-row-addon input { border-color: rgba(230, 81, 0, 0.35); background: #fffbf7; }
+    .template-row-addon input:focus { border-color: #e65100; outline: none; }
     .template-row label.checkbox-label { min-width: 0; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
     .template-row label.checkbox-label input[type="checkbox"] { flex: none; width: auto; }
 
@@ -252,15 +276,24 @@
       border: 1px solid var(--teal);
     }
     .copy-btn-full:hover { background: var(--teal-soft); }
-    .copy-btn-pdf {
-      background: #f0e8f4;
-      color: #6b4a7a;
-      border: 1px solid #c4a8d4;
+    .copy-btn-addon {
+      background: #fff8e1;
+      color: #e65100;
+      border: 1px solid #ffb74d;
     }
-    .copy-btn-pdf:hover { background: #e0d0e8; }
+    .copy-btn-addon:hover { background: #ffecb3; }
+    .addon-names-row { margin-top: 0.25rem; }
+    .addon-names-hint { font-size: 0.85rem; color: #e65100; background: #fff3e0; padding: 0.35rem 0.6rem; border-radius: 4px; display: inline-block; }
+    .price-inputs-container { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem; margin-bottom: 0.5rem; max-height: 280px; overflow-y: auto; }
+    .price-inputs-container .no-data { margin: 0; color: var(--ink-muted); font-size: 0.9rem; }
+    .price-inputs-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    .price-inputs-table th { text-align: left; padding: 0.5rem 0.75rem; font-weight: 600; color: var(--ink-muted); border-bottom: 1px solid var(--border); }
+    .price-inputs-table th.price-th { width: 90px; padding-left: 0.5rem; }
+    .price-inputs-table td { padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    .price-inputs-table .price-item-name { word-break: break-word; }
+    .price-inputs-table .price-amount-input { width: 100px; padding: 0.4rem 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; text-align: right; }
+    .price-inputs-table .price-amount-input:focus { outline: none; border-color: var(--teal); }
     .customer-summary-card .template-desc { font-size: 0.9rem; color: var(--muted); margin: 0 0 0.75rem 0; line-height: 1.4; }
-    .sheet-hint { margin-top: 0.35rem; margin-bottom: 0; font-size: 0.85rem; line-height: 1.5; }
-    .sheet-hint code { background: var(--bg); padding: 0.1em 0.35em; border-radius: 3px; font-size: 0.9em; }
     .template-preview-box { background: var(--bg); border-radius: var(--radius-sm); padding: 0.75rem; margin-bottom: 0.75rem; max-height: 140px; overflow: auto; }
     .template-preview-text { margin: 0; font-size: 0.8rem; white-space: pre-wrap; word-break: break-word; color: var(--text); }
     .template-preview-note { margin: 0.5rem 0 0 0; font-size: 0.85rem; color: var(--teal); }
@@ -314,6 +347,12 @@
       .input-section { padding: 1.25rem; }
       .tagline { white-space: normal; }
       th, td { padding: 0.5rem 0.6rem; font-size: 0.85rem; }
+      .btn-row .primary, .btn-row .secondary { min-height: 44px; padding: 0.6rem 1.25rem; }
+      .copy-btn, .copy-btn-full, .copy-btn-addon { min-height: 44px; padding: 0.5rem 1rem; }
+      .input-section textarea, .input-section input[type="text"], .input-section input[type="date"], .input-section input[type="number"] { font-size: 16px; }
+      .result-card .body { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .template-row { flex-wrap: wrap; }
+      .template-row input { min-width: 0; }
     }
   </style>
 </head>
@@ -325,17 +364,22 @@
     </header>
 
     <section class="input-section">
-      <label for="raw">貼上 LINE 喊單內容</label>
-      <textarea id="raw" placeholder="直接貼客人喊的內容，每行一筆：&#10;于 薄荷巧克力冰淇淋布丁狗+1&#10;于 蘇打汽水布丁狗+1&#10;（姓名 品項+數量，空格或 Tab 分隔）"></textarea>
+      <div class="label-with-hint">
+        <label for="raw">貼上 LINE 喊單內容</label>
+        <span class="label-hint">直接貼客人喊的內容，每行一筆：姓名 品項+數量（空格或 Tab 分隔）</span>
+      </div>
+      <textarea id="raw"></textarea>
       <p class="hint">貼客人實際喊單，<strong>姓名 品項+數量</strong>，同一人可多行。下方填「品項單價」後可自動計算每人應付與補款。</p>
       <div class="btn-row">
         <button type="button" class="primary" id="parseBtn">開始統計</button>
         <button type="button" class="secondary" id="clearBtn">清空</button>
       </div>
 
-      <label for="prices" class="deposit-label">品項單價（選填，用於自動計算應付與訂金）</label>
-      <textarea id="prices" placeholder="每行一筆：品項 單價&#10;或 階梯價：品項 預設單價 滿N個 每個M元&#10;例：薄荷巧克力布丁狗 380&#10;例：薄荷巧克力布丁狗 400 3 380（買3個以上每個380）"></textarea>
-      <p class="hint">按「開始統計」後會自動帶入喊單出現的品項名稱，您只需補上單價。支援階梯價：<strong>品項 預設 滿N 每個M</strong>（如 品項 400 3 380 = 買3個以上每個380）。</p>
+      <label class="deposit-label">品項單價（選填，用於自動計算應付與訂金）</label>
+      <div id="priceInputsContainer" class="price-inputs-container">
+        <p class="no-data" id="priceInputsPlaceholder">請先貼上喊單並按「開始統計」，將顯示品項列表供填寫單價。</p>
+      </div>
+      <p class="hint">按「開始統計」後會列出本批品項，在每個品項右側輸入單價（元）即可自動計算每人應付與補款。</p>
 
       <div id="missingPriceAlert" class="missing-price-alert" style="display: none;"></div>
 
@@ -343,7 +387,7 @@
         <span class="template-options-title">給客人明細（完整版選填）</span>
         <div class="template-row">
           <label>團名／標題</label>
-          <input type="text" id="optTitle" placeholder="例：🍮 kthings 水果冰淇淋布丁狗開團" />
+          <input type="text" id="optTitle" />
         </div>
         <div class="template-row">
           <label>訂單成立日期</label>
@@ -361,29 +405,14 @@
           <label>賣貨便運費</label>
           <input type="text" id="optShipping" placeholder="例：0 或 60" value="0" />
         </div>
-        <div class="template-row">
-          <label>取貨門市</label>
-          <input type="text" id="optStore" placeholder="例：博愛門市、7-11 某某門市" />
+        <div class="template-row template-row-original">
+          <label>原訂單查詢碼</label>
+          <input type="text" id="optOriginalOrderId" placeholder="選填，用於加購明細（例：ORD00112）" />
         </div>
-        <div class="template-row">
-          <label>門市地址</label>
-          <input type="text" id="optStoreAddr" placeholder="例：彰化縣彰化市南校街134號" />
+        <div class="template-row template-row-addon">
+          <label>加購團名</label>
+          <input type="text" id="optAddonTitle" />
         </div>
-        <div class="template-row">
-          <label>出貨日期</label>
-          <input type="date" id="optShipDate" placeholder="選填" />
-        </div>
-        <div class="template-row">
-          <label>Google 試算表寫入</label>
-          <input type="text" id="optSheetUrl" placeholder="貼上「網頁應用程式」網址（見下方說明）" />
-        </div>
-        <div class="template-row">
-          <label class="checkbox-label">
-            <input type="checkbox" id="optSheetWriteOnPdf" checked />
-            一鍵產生 PDF 後同時寫入試算表
-          </label>
-        </div>
-        <p class="hint sheet-hint">填寫上方網址並勾選「一鍵產生 PDF 後同時寫入試算表」後，按 <strong>一鍵產生 PDF</strong> 會將本團訂單資料自動寫入該試算表。<br><strong>如何取得網址：</strong>開一個 Google 試算表 → 擴充功能 → Apps Script → 貼上專案裡的 <code>GoogleAppsScript_試算表寫入.gs</code> 程式碼 → 部署 → 新增部署 → 類型選「網頁應用程式」→ 執行身分「我」、存取權「任何人」→ 部署後複製網址貼到上方欄位。</p>
       </div>
     </section>
 
@@ -406,19 +435,16 @@
         <div class="body" id="supplementBody">
           <p class="no-data">—</p>
         </div>
-        <div class="copy-wrap" id="copySupplementWrap" style="display: none;">
-          <button type="button" class="copy-btn" id="copySupplementBtn">📋 一鍵複製補款明細（簡短版）</button>
-        </div>
       </div>
       <div class="result-card customer-summary-card" id="customerSummaryCard" style="display: none;">
         <h2><span class="icon">📄</span>給客人明細（模板）</h2>
-        <p class="template-desc">依上方「給客人明細」設定（團名、日期、訂單編號、訂金、運費、取貨門市）；Logo 自動讀取同目錄 logo.png（已上傳 GitHub 即可）與統計結果，一鍵複製文字或產生 PDF 給客人。</p>
+        <p class="template-desc">依上方「給客人明細」設定（團名、日期、訂單編號、訂金、運費）與統計結果，一鍵複製文字給客人。顧客事後加購其他團時請用「一鍵複製加購明細」。</p>
         <div class="body template-preview-box" id="customerSummaryPreview">
           <p class="no-data">—</p>
         </div>
         <div class="copy-wrap template-actions" id="customerSummaryWrap">
           <button type="button" class="copy-btn copy-btn-full" id="copyFullTemplateBtn">📋 一鍵複製給客人明細</button>
-          <button type="button" class="copy-btn copy-btn-pdf" id="generatePdfBtn">📎 一鍵產生 PDF</button>
+          <button type="button" class="copy-btn copy-btn-addon" id="copyAddonTemplateBtn">📋 一鍵複製加購明細</button>
         </div>
       </div>
       <div class="result-card">
@@ -432,10 +458,6 @@
       </div>
     </div>
   </div>
-  <div id="pdfContainer" style="position:absolute;left:-9999px;top:0;width:210mm;min-height:297mm;background:#fff;padding:12mm;font-family:Microsoft JhengHei,sans-serif;font-size:11pt;line-height:1.5;color:#333;box-sizing:border-box;"></div>
-
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" crossorigin="anonymous"></script>
   <script>
     function init() {
     (function () {
@@ -443,8 +465,6 @@
       const depositEl = document.getElementById('deposit');
       const parseBtn = document.getElementById('parseBtn');
       const clearBtn = document.getElementById('clearBtn');
-      const copySupplementBtn = document.getElementById('copySupplementBtn');
-      const copySupplementWrap = document.getElementById('copySupplementWrap');
       const perPersonBody = document.getElementById('perPersonBody');
       const perItemBody = document.getElementById('perItemBody');
       const supplementBody = document.getElementById('supplementBody');
@@ -624,19 +644,19 @@
         return v.default || 0;
       }
 
-      function getExistingPriceItemNames(text) {
-        const names = [];
-        const lines = (text || '').split(/\n/).map(s => (s || '').trim()).filter(Boolean);
-        for (const line of lines) {
-          const tokens = line.split(/\s+/).filter(Boolean);
-          if (tokens.length >= 4 && !isNaN(parseInt(tokens[tokens.length - 1], 10)) && !isNaN(parseInt(tokens[tokens.length - 2], 10)) && !isNaN(parseInt(tokens[tokens.length - 3], 10)))
-            names.push(tokens.slice(0, -3).join(' ').trim());
-          else if (tokens.length >= 2 && !isNaN(parseInt(tokens[tokens.length - 1], 10)))
-            names.push(tokens.slice(0, -1).join(' ').trim());
-          else if (tokens.length >= 1)
-            names.push(tokens.join(' ').trim());
-        }
-        return names;
+      function buildPriceMapFromInputs() {
+        const map = {};
+        const container = document.getElementById('priceInputsContainer');
+        if (!container) return map;
+        container.querySelectorAll('.price-row').forEach(function (row) {
+          const name = row.getAttribute('data-item-name');
+          const input = row.querySelector('.price-amount-input');
+          if (name && input) {
+            const val = parseInt(input.value.trim(), 10);
+            if (!isNaN(val) && val >= 0) map[name] = val;
+          }
+        });
+        return map;
       }
 
       // 解析「每人應付與已收訂金」：每行 姓名 應付 已收訂金（空格或 Tab 分隔）
@@ -769,7 +789,6 @@
         const summaryBar = document.getElementById('summaryBar');
         if (!text) {
           if (summaryBar) summaryBar.style.display = 'none';
-          if (copySupplementWrap) copySupplementWrap.style.display = 'none';
           var custCard = document.getElementById('customerSummaryCard');
           if (custCard) custCard.style.display = 'none';
           var cpWrap = document.getElementById('copyPurchaseWrap');
@@ -780,6 +799,8 @@
           if (perItemBody) perItemBody.innerHTML = '<p class="no-data">—</p>';
           if (supplementBody) supplementBody.innerHTML = '<p class="no-data">—</p>';
           if (purchaseListBody) purchaseListBody.innerHTML = '<p class="no-data">—</p>';
+          var priceContainer = document.getElementById('priceInputsContainer');
+          if (priceContainer) priceContainer.innerHTML = '<p class="no-data" id="priceInputsPlaceholder">請先貼上喊單並按「開始統計」，將顯示品項列表供填寫單價。</p>';
           return;
         }
 
@@ -793,7 +814,6 @@
         } else if (parsed.mode === 'tab') {
           if (parsed.tabRows.length === 0) {
             if (summaryBar) summaryBar.style.display = 'none';
-            if (copySupplementWrap) copySupplementWrap.style.display = 'none';
             if (document.getElementById('customerSummaryCard')) document.getElementById('customerSummaryCard').style.display = 'none';
             if (document.getElementById('copyPurchaseWrap')) document.getElementById('copyPurchaseWrap').style.display = 'none';
             if (document.getElementById('missingPriceAlert')) document.getElementById('missingPriceAlert').style.display = 'none';
@@ -811,7 +831,6 @@
         } else {
           if (parsed.orders.length === 0) {
             if (summaryBar) summaryBar.style.display = 'none';
-            if (copySupplementWrap) copySupplementWrap.style.display = 'none';
             if (document.getElementById('customerSummaryCard')) document.getElementById('customerSummaryCard').style.display = 'none';
             if (document.getElementById('copyPurchaseWrap')) document.getElementById('copyPurchaseWrap').style.display = 'none';
             if (document.getElementById('missingPriceAlert')) document.getElementById('missingPriceAlert').style.display = 'none';
@@ -828,23 +847,44 @@
           purchaseList = agg.purchaseList;
         }
 
-        // 喊單品項自動帶入「品項單價」欄位（僅帶品名，尚未填的會補上一行）
-        if ((parsed.mode === 'tab' || parsed.mode === 'line') && itemTotal) {
-          const pricesEl = document.getElementById('prices');
-          if (pricesEl) {
-            const existing = getExistingPriceItemNames(pricesEl.value);
-            const toAdd = [];
-            for (const key in itemTotal) { if (existing.indexOf(key) === -1) toAdd.push(key); }
-            if (toAdd.length > 0) {
-              const suffix = toAdd.map(function (n) { return n + ' '; }).join('\n');
-              pricesEl.value = (pricesEl.value.trim() ? pricesEl.value.trim() + '\n' : '') + suffix;
-            }
+        // 品項單價：依本批品項產生「品項 + 單價輸入」列，並保留已填寫的單價
+        const priceInputsContainer = document.getElementById('priceInputsContainer');
+        const priceInputsPlaceholder = document.getElementById('priceInputsPlaceholder');
+        var savedPrices = window._savedPriceMap || {};
+        if (priceInputsContainer && purchaseList && purchaseList.length > 0) {
+          if (priceInputsPlaceholder) priceInputsPlaceholder.style.display = 'none';
+          var existingPrices = {};
+          priceInputsContainer.querySelectorAll('.price-row').forEach(function (row) {
+            var name = row.getAttribute('data-item-name');
+            var input = row.querySelector('.price-amount-input');
+            if (name && input && input.value.trim() !== '') existingPrices[name] = input.value.trim();
+          });
+          priceInputsContainer.innerHTML = '';
+          var table = document.createElement('table');
+          table.className = 'price-inputs-table';
+          table.innerHTML = '<thead><tr><th>品項</th><th class="price-th">單價（元）</th></tr></thead><tbody></tbody>';
+          var tbody = table.querySelector('tbody');
+          purchaseList.forEach(function (row) {
+            var itemName = row.itemName || '';
+            var val = existingPrices[itemName] || savedPrices[itemName] || '';
+            var tr = document.createElement('tr');
+            tr.className = 'price-row';
+            tr.setAttribute('data-item-name', itemName);
+            tr.innerHTML = '<td class="price-item-name">' + escapeHtml(itemName) + '</td><td><input type="text" inputmode="numeric" class="price-amount-input" value="' + escapeAttr(String(val)) + '" placeholder="選填" autocomplete="off" /></td>';
+            tbody.appendChild(tr);
+          });
+          priceInputsContainer.appendChild(table);
+          priceInputsContainer.querySelectorAll('.price-amount-input').forEach(function (input) {
+            input.addEventListener('change', function () { run(); });
+          });
+        } else if (priceInputsContainer) {
+          priceInputsContainer.innerHTML = '';
+          if (priceInputsPlaceholder) {
+            priceInputsContainer.appendChild(priceInputsPlaceholder);
+            priceInputsPlaceholder.style.display = 'block';
           }
         }
-
-        // 若有填「品項單價」，自動計算每人應付；訂金依「訂金金額」帶入
-        const pricesEl = document.getElementById('prices');
-        const priceMap = parsePriceList(pricesEl && pricesEl.value ? pricesEl.value.trim() : '');
+        var priceMap = buildPriceMapFromInputs();
         var missingPriceAlertEl = document.getElementById('missingPriceAlert');
         if (missingPriceAlertEl && (parsed.mode === 'tab' || parsed.mode === 'line') && itemTotal) {
           var missing = [];
@@ -864,20 +904,26 @@
         }
         const optDepositEl = document.getElementById('optDeposit');
         const defaultDepositForAuto = (optDepositEl && optDepositEl.value.trim() !== '') ? parseInt(optDepositEl.value.trim(), 10) : 0;
-        if (Object.keys(priceMap).length > 0 && (parsed.mode === 'tab' || parsed.mode === 'line')) {
+        if (Object.keys(priceMap).length > 0) {
           for (const p of perPerson) {
             var tot = 0;
             for (var i = 0; i < p.items.length; i++) {
               var it = p.items[i];
-              tot += (it.qty || 0) * getUnitPrice(priceMap, it.name, it.qty);
+              var unitPrice = getUnitPrice(priceMap, it.name, it.qty);
+              it.price = unitPrice;
+              tot += (it.qty || 0) * unitPrice;
             }
-            p.total = tot;
-            p.paid = isNaN(defaultDepositForAuto) ? 0 : Math.min(defaultDepositForAuto, tot);
-            p.supplement = Math.max(0, tot - p.paid);
+            if (parsed.mode === 'tab' || parsed.mode === 'line') {
+              p.total = tot;
+              p.paid = isNaN(defaultDepositForAuto) ? 0 : Math.min(defaultDepositForAuto, tot);
+              p.supplement = Math.max(0, tot - p.paid);
+            }
           }
-          supplements = perPerson.filter(function (p) { return p.supplement > 0; }).map(function (p) {
-            return { name: p.name, total: p.total, paid: p.paid, amount: p.supplement };
-          });
+          if (parsed.mode === 'tab' || parsed.mode === 'line') {
+            supplements = perPerson.filter(function (p) { return p.supplement > 0; }).map(function (p) {
+              return { name: p.name, total: p.total, paid: p.paid, amount: p.supplement };
+            });
+          }
         }
 
         // 若有填「每人應付與已收訂金」，覆寫並重算補款（可覆蓋自動計算）
@@ -936,11 +982,7 @@
         var pdfOrderIdNum = parseInt(String(pdfOrderIdStart).replace(/\D/g, ''), 10) || 100;
         var pdfOrderIdPad = Math.max(5, (String(pdfOrderIdStart).replace(/\D/g, '') || '').length);
         function padOrderIdPdf(n) { var s = String(n); while (s.length < pdfOrderIdPad) s = '0' + s; return s; }
-        var pdfStore = (document.getElementById('optStore') && document.getElementById('optStore').value.trim()) || '';
-        var pdfStoreAddr = (document.getElementById('optStoreAddr') && document.getElementById('optStoreAddr').value.trim()) || '';
-        var pdfShipDateEl = document.getElementById('optShipDate');
-        var pdfShipDateStr = (pdfShipDateEl && pdfShipDateEl.value) ? pdfShipDateEl.value.replace(/-/g, '/') : '';
-        window._lastPdfData = { perPerson: perPerson, title: pdfTitle, dateStr: pdfDateStr, orderIdNum: pdfOrderIdNum, padOrderId: padOrderIdPdf, defaultDeposit: pdfDefaultDeposit, shippingNum: pdfShippingNum, storeName: pdfStore, storeAddr: pdfStoreAddr, shipDateStr: pdfShipDateStr };
+        window._lastPdfData = { perPerson: perPerson, title: pdfTitle, dateStr: pdfDateStr, orderIdNum: pdfOrderIdNum, padOrderId: padOrderIdPdf, defaultDeposit: pdfDefaultDeposit, shippingNum: pdfShippingNum, storeName: '', storeAddr: '', shipDateStr: '' };
 
         // 每人訂單（含賣貨便運費、應付總計）
         if (perPersonBody) perPersonBody.innerHTML = renderTable(
@@ -966,11 +1008,9 @@
           (row) => [row.name, '<span class="amount">' + row.qty + '</span>']
         );
 
-        // 補款明細與一鍵複製用文字
-        let supplementCopyText = '';
+        // 補款明細
         if (supplements.length === 0) {
           if (supplementBody) supplementBody.innerHTML = '<p class="no-data">目前無需補款（可於上方填寫「品項單價」與「訂金金額」產生補款明細）</p>';
-          if (copySupplementWrap) copySupplementWrap.style.display = 'none';
         } else {
           if (supplementBody) supplementBody.innerHTML = renderTable(
             ['姓名', '應付總計', '已收訂金', '須補款'],
@@ -982,21 +1022,9 @@
               '<span class="supplement amount">' + row.amount + '</span>'
             ]
           );
-          supplementCopyText = supplements.map(function (row) {
-            var paid = row.paid != null ? row.paid : 0;
-            if (paid > 0 && row.total != null) {
-              return row.name + ' 應付 ' + row.total + ' 元，已收訂金 ' + row.paid + ' 元，須補款 ' + row.amount + ' 元';
-            }
-            if (row.total != null) {
-              return row.name + ' 應付 ' + row.total + ' 元，須補款 ' + row.amount + ' 元';
-            }
-            return row.name + ' 須補款 ' + row.amount + ' 元';
-          }).join('\n');
-          if (copySupplementWrap) copySupplementWrap.style.display = 'block';
         }
-        window._lastSupplementCopyText = supplementCopyText;
 
-        // 給客人明細（完整版）：依「給客人明細」設定為「每一位」客人產生一則明細，供一鍵複製與 PDF
+        // 給客人明細（完整版）：依「給客人明細」設定為「每一位」客人產生一則明細，供一鍵複製
         var title = (document.getElementById('optTitle') && document.getElementById('optTitle').value.trim()) || '訂單明細';
         var dateEl = document.getElementById('optDate');
         var dateVal = dateEl && dateEl.value ? dateEl.value.trim() : '';
@@ -1014,9 +1042,8 @@
         perPerson.forEach(function (p, idx) {
           var items = (p.items || []);
           var itemLines = items.map(function (it, i) {
-            var line = (i + 1) + '、' + it.name + '×' + it.qty;
-            if (it.price != null && !isNaN(it.price)) line += ' $' + it.price;
-            return line;
+            var pricePart = (it.price != null && !isNaN(it.price)) ? ' $' + it.price : '';
+            return (i + 1) + '、' + it.name + pricePart + '×' + it.qty;
           }).join('\n');
           var totalQty = items.reduce(function (sum, it) { return sum + it.qty; }, 0);
           var total = (p.totalWithShipping != null ? p.totalWithShipping : (p.total != null ? p.total : 0));
@@ -1024,12 +1051,33 @@
           if (isNaN(paid)) paid = 0;
           var supplementAmt = (p.supplement != null ? p.supplement : Math.max(0, total - paid));
           var orderId = padOrderId(orderIdNum + idx);
-          var depositLine = '訂金：NT$' + paid;
-          if (paid > 0) depositLine += '（' + dateStr + '已收）';
-          var block = title + '\n您的訂單編號：' + orderId + '\n🌟訂單成立：' + dateStr + '\n（@' + (p.name || '') + ') 的訂單如下：\n\n🛒預購款式：\n\n' + (itemLines || '—') + '\n\n數量：共 ' + totalQty + ' 款\n訂單總金額：NT$' + total + '\n' + depositLine + '\n賣貨便運費：NT$' + (p.shipping != null ? p.shipping : shippingNum) + '\n\n🚚待貨到結清金額：\n      NT$ ' + supplementAmt + '\n=（$' + total + '-$' + paid + ')\n\n📎 實際出貨後會再提供 PDF 明細給您。';
+          var depositLine = '訂金：NT$' + paid + (paid > 0 && dateStr ? '（' + dateStr + '已收）' : '');
+          var shipAmt = (p.shipping != null ? p.shipping : shippingNum);
+          var block = '✨ 訂單成立通知\n📅 訂單成立日期：' + dateStr + '\n🔎 訂單查詢碼：ORD' + orderId + '\n（@' + (p.name || '') + ') 的訂單如下：\n\n🛒 預購款式：\n\n' + (itemLines || '—') + '\n\n數量：共 ' + totalQty + ' 款\n總金額：NT$' + total + '\n' + depositLine + '\n\n🚚 物流費用\n賣貨便運費：NT$' + shipAmt + '\n\n🚚 待貨到結清金額：\n      NT$ ' + supplementAmt + '\n=（$' + total + '-$' + paid + ')\n\n📎 感謝您的訂購與耐心等候🙂';
           fullBlocksAll.push(block);
         });
         window._lastFullTemplateCopyText = fullBlocksAll.join('\n\n---\n\n');
+
+        var originalOrderIdStr = (document.getElementById('optOriginalOrderId') && document.getElementById('optOriginalOrderId').value.trim()) || '';
+        var addonTitleStr = (document.getElementById('optAddonTitle') && document.getElementById('optAddonTitle').value.trim()) || '';
+        var addonBlocksAll = [];
+        perPerson.forEach(function (p, idx) {
+          var items = (p.items || []);
+          var itemLines = items.map(function (it, i) {
+            var pricePart = (it.price != null && !isNaN(it.price)) ? ' $' + it.price : '';
+            return (i + 1) + '、' + it.name + pricePart + '×' + it.qty;
+          }).join('\n');
+          var totalQty = items.reduce(function (sum, it) { return sum + it.qty; }, 0);
+          var subtotal = (p.total != null ? p.total : 0);
+          var shipAmt = (p.shipping != null ? p.shipping : shippingNum);
+          var totalWithShip = subtotal + shipAmt;
+          var originalLine = originalOrderIdStr ? '\n🔎 原訂單查詢碼：' + originalOrderIdStr + '（供對照）' : '';
+          var addonTitleLine = addonTitleStr ? '\n🏷️ 加購團名：' + addonTitleStr : '';
+          var addonFirstLine = '✨ 加購訂單通知' + (addonTitleStr ? '（' + addonTitleStr + '）' : '');
+          var block = addonFirstLine + '\n📅 加購日期：' + dateStr + addonTitleLine + originalLine + '\n（@' + (p.name || '') + '）的加購內容如下：\n\n🛒加購款式：\n\n' + (itemLines || '—') + '\n\n數量：共 ' + totalQty + ' 款\n加購小計：NT$' + subtotal + '\n賣貨便運費：NT$' + shipAmt + '（與原訂單合併寄送時可免）\n\n🚚待結清金額：NT$' + totalWithShip + '\n\n📎 感謝您的加購與耐心等候🙂';
+          addonBlocksAll.push(block);
+        });
+        window._lastAddonTemplateCopyText = addonBlocksAll.join('\n\n---\n\n');
 
         // 給客人明細模板區塊：有統計結果時顯示，並顯示預覽摘要
         var customerSummaryCard = document.getElementById('customerSummaryCard');
@@ -1040,7 +1088,7 @@
         if (customerSummaryPreview) {
           var firstBlock = fullBlocksAll[0];
           var previewText = firstBlock ? (firstBlock.split('\n').slice(0, 6).join('\n') + '\n…') : '—';
-          customerSummaryPreview.innerHTML = '<pre class="template-preview-text">' + escapeHtmlForPreview(previewText) + '</pre><p class="template-preview-note">共 ' + perPerson.length + ' 人，可一鍵複製或產生 PDF</p>';
+          customerSummaryPreview.innerHTML = '<pre class="template-preview-text">' + escapeHtmlForPreview(previewText) + '</pre><p class="template-preview-note">共 ' + perPerson.length + ' 人，可一鍵複製</p>';
         }
         function escapeHtmlForPreview(s) {
           if (!s) return '';
@@ -1079,11 +1127,19 @@
             orderId: (document.getElementById('optOrderId') && document.getElementById('optOrderId').value) || '',
             deposit: (document.getElementById('optDeposit') && document.getElementById('optDeposit').value) || '',
             shipping: (document.getElementById('optShipping') && document.getElementById('optShipping').value) || '',
-            store: (document.getElementById('optStore') && document.getElementById('optStore').value) || '',
-            storeAddr: (document.getElementById('optStoreAddr') && document.getElementById('optStoreAddr').value) || '',
-            shipDate: (document.getElementById('optShipDate') && document.getElementById('optShipDate').value) || '',
-            sheetUrl: (document.getElementById('optSheetUrl') && document.getElementById('optSheetUrl').value) || '',
-            sheetWriteOnPdf: !!(document.getElementById('optSheetWriteOnPdf') && document.getElementById('optSheetWriteOnPdf').checked),
+            originalOrderId: (document.getElementById('optOriginalOrderId') && document.getElementById('optOriginalOrderId').value) || '',
+            addonTitle: (document.getElementById('optAddonTitle') && document.getElementById('optAddonTitle').value) || '',
+            prices: (function () {
+              var container = document.getElementById('priceInputsContainer');
+              if (!container) return {};
+              var obj = {};
+              container.querySelectorAll('.price-row').forEach(function (row) {
+                var name = row.getAttribute('data-item-name');
+                var input = row.querySelector('.price-amount-input');
+                if (name && input && input.value.trim() !== '') obj[name] = input.value.trim();
+              });
+              return obj;
+            })()
           };
           localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(o));
         } catch (e) {}
@@ -1099,11 +1155,9 @@
           if (o.orderId && (el = document.getElementById('optOrderId'))) el.value = o.orderId;
           if (o.deposit != null && (el = document.getElementById('optDeposit'))) el.value = o.deposit;
           if (o.shipping != null && (el = document.getElementById('optShipping'))) el.value = o.shipping;
-          if (o.store != null && (el = document.getElementById('optStore'))) el.value = o.store;
-          if (o.storeAddr != null && (el = document.getElementById('optStoreAddr'))) el.value = o.storeAddr;
-          if (o.shipDate != null && (el = document.getElementById('optShipDate'))) el.value = o.shipDate;
-          if (o.sheetUrl != null && (el = document.getElementById('optSheetUrl'))) el.value = o.sheetUrl;
-          if (o.sheetWriteOnPdf !== undefined && (el = document.getElementById('optSheetWriteOnPdf'))) el.checked = !!o.sheetWriteOnPdf;
+          if (o.originalOrderId != null && (el = document.getElementById('optOriginalOrderId'))) el.value = o.originalOrderId;
+          if (o.addonTitle != null && (el = document.getElementById('optAddonTitle'))) el.value = o.addonTitle;
+          if (o.prices && typeof o.prices === 'object') window._savedPriceMap = o.prices;
         } catch (e) {}
       }
       (function setDefaultDate() {
@@ -1115,7 +1169,7 @@
       })();
       loadTemplateOptions();
 
-      ['optTitle', 'optDate', 'optOrderId', 'optDeposit', 'optShipping', 'optStore', 'optStoreAddr', 'optShipDate', 'optSheetUrl', 'optSheetWriteOnPdf'].forEach(function (id) {
+      ['optTitle', 'optDate', 'optOrderId', 'optDeposit', 'optShipping', 'optOriginalOrderId', 'optAddonTitle'].forEach(function (id) {
         var el = document.getElementById(id);
         if (el) el.addEventListener('change', saveTemplateOptions);
       });
@@ -1133,23 +1187,12 @@
         clearBtn.addEventListener('click', function () {
           if (rawEl) rawEl.value = '';
           var pricesInput = document.getElementById('prices');
-          if (pricesInput) pricesInput.value = '';
+          var priceContainer = document.getElementById('priceInputsContainer');
+          if (priceContainer) priceContainer.innerHTML = '<p class="no-data" id="priceInputsPlaceholder">請先貼上喊單並按「開始統計」，將顯示品項列表供填寫單價。</p>';
           if (depositEl) depositEl.value = '';
           run();
         });
       }
-      copySupplementBtn.addEventListener('click', function () {
-        const text = window._lastSupplementCopyText || '';
-        if (!text) return;
-        navigator.clipboard.writeText(text).then(function () {
-          copySupplementBtn.textContent = '✓ 已複製！';
-          setTimeout(function () {
-            copySupplementBtn.textContent = '📋 一鍵複製補款明細（簡短版）';
-          }, 2000);
-        }).catch(function () {
-          alert('無法複製，請手動選取補款明細區塊文字複製');
-        });
-      });
       var copyPurchaseBtn = document.getElementById('copyPurchaseBtn');
       if (copyPurchaseBtn) copyPurchaseBtn.addEventListener('click', function () {
         var text = window._lastPurchaseListCopyText || '';
@@ -1172,196 +1215,53 @@
           alert('無法複製，請手動選取複製');
         });
       });
-
-      function buildSheetDataFromPdfData(data) {
-        if (!data || !data.perPerson || data.perPerson.length === 0) return { header: [], rows: [], tsv: '' };
-        var title = data.title || '訂單明細';
-        var dateStr = data.dateStr || '';
-        var shippingNum = data.shippingNum || 0;
-        var orderIdNum = data.orderIdNum;
-        var padOrderId = data.padOrderId;
-        var storeName = (data.storeName || '').trim();
-        var storeAddr = (data.storeAddr || '').trim();
-        var shipDateStr = (data.shipDateStr || '').trim();
-        // 與「訂單寫入留存.xlsm」資料庫欄位一致（無訂單編號，最後一欄為訂單總金額）
-        var header = ['客戶姓名', '取貨門市', '門市地址', '預購日期', '出貨日期', '品項明細', '小計', '訂金', '運費', '補款', '訂單總金額'];
-        var rows = [];
-        data.perPerson.forEach(function (p, i) {
-          var total = (p.totalWithShipping != null ? p.totalWithShipping : (p.total != null ? p.total : 0));
-          var paid = (p.paid != null ? p.paid : 0);
-          var ship = (p.shipping != null ? p.shipping : shippingNum);
-          var supplement = (p.supplement != null ? p.supplement : Math.max(0, total - paid));
-          var subtotal = (p.total != null ? p.total : 0);
-          var itemsText = (p.items || []).map(function (it) { return (it.name || '') + '×' + (it.qty != null ? it.qty : ''); }).join('、');
-          rows.push([p.name || '', storeName, storeAddr, dateStr, shipDateStr, itemsText, subtotal, paid, ship, supplement, total]);
-        });
-        var tsv = header.join('\t') + '\n' + rows.map(function (r) { return r.map(function (c) { return String(c).replace(/\t/g, ' ').replace(/\n/g, ' '); }).join('\t'); }).join('\n');
-        return { title: title, header: header, rows: rows, tsv: tsv };
-      }
-
-      document.getElementById('generatePdfBtn').addEventListener('click', function () {
+      var copyAddonBtn = document.getElementById('copyAddonTemplateBtn');
+      if (copyAddonBtn) copyAddonBtn.addEventListener('click', function () {
         var data = window._lastPdfData;
         if (!data || !data.perPerson || data.perPerson.length === 0) {
-          alert('請先貼上喊單並完成統計，再產生 PDF');
+          alert('請先貼上加購喊單並按「開始統計」');
           return;
         }
-        var html = '';
-        var title = data.title || '訂單明細';
-        var dateStr = data.dateStr || '';
-        var defaultDeposit = data.defaultDeposit || '';
-        var shippingNum = data.shippingNum || 0;
-        var orderIdNum = data.orderIdNum;
-        var padOrderId = data.padOrderId;
-        var storeName = (data.storeName || '').trim();
-        var storeAddr = (data.storeAddr || '').trim();
-        var shipDateStr = (data.shipDateStr || '').trim();
-        var logoSrc = 'logo.png';
-        var pdfPageStyle = 'width:100%;border-collapse:collapse;font-family:Microsoft JhengHei,sans-serif;font-size:11pt;color:#333;';
-        var pdfThStyle = 'background:#4a4a4a;color:#fff;padding:8px 10px;text-align:left;font-weight:bold;border:1px solid #333;';
-        var pdfTdStyle = 'padding:6px 10px;border:1px solid #ddd;';
-        var pdfBoxBorder = 'border:1px solid #333;padding:8px 10px;';
-
-        var pageHtmls = [];
-        data.perPerson.forEach(function (p, i) {
-          var orderId = padOrderId(orderIdNum + i);
-          var total = (p.totalWithShipping != null ? p.totalWithShipping : (p.total != null ? p.total : 0));
-          var paid = (p.paid != null ? p.paid : 0);
-          var ship = (p.shipping != null ? p.shipping : shippingNum);
-          var supplement = (p.supplement != null ? p.supplement : Math.max(0, total - paid));
-          var subtotal = (p.total != null ? p.total : 0);
+        var perPerson = data.perPerson;
+        var shippingNum = data.shippingNum != null ? data.shippingNum : 0;
+        var dateEl = document.getElementById('optDate');
+        var dateVal = dateEl && dateEl.value ? dateEl.value.trim() : '';
+        var dateStr = dateVal ? dateVal.replace(/-/g, '/') : new Date().toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '/');
+        var originalOrderIdStr = (document.getElementById('optOriginalOrderId') && document.getElementById('optOriginalOrderId').value.trim()) || '';
+        var addonTitleStr = (document.getElementById('optAddonTitle') && document.getElementById('optAddonTitle').value.trim()) || '';
+        var namesList = perPerson.map(function (p) { return p.name || ''; }).join('、');
+        var confirmMsg = '本批加購客人：' + namesList;
+        if (originalOrderIdStr) {
+          confirmMsg += '\n\n明細將顯示「原訂單查詢碼：' + originalOrderIdStr + '」\n請確認此為上述客人之訂單。';
+        }
+        confirmMsg += '\n\n確定要複製加購明細嗎？';
+        if (!confirm(confirmMsg)) return;
+        var addonBlocksAll = [];
+        perPerson.forEach(function (p) {
           var items = (p.items || []);
-
-          var one = '<div style="width:794px;height:1123px;box-sizing:border-box;padding:24px;background:#fff;page-break-after:always;">';
-          one += '<table style="' + pdfPageStyle + '"><tr>';
-          one += '<td style="background:#4a4a4a;color:#fff;padding:12px 16px;font-size:16pt;font-weight:bold;width:38%;border:1px solid #333;">' + escapeHtml(title) + '</td>';
-          one += '<td style="background:#e8b4bc;padding:12px 16px;width:62%;border:1px solid #ccc;vertical-align:middle;">';
-          if (logoSrc) one += '<img src="' + String(logoSrc).replace(/"/g, '&quot;') + '" alt="" style="max-height:48px;max-width:200px;object-fit:contain;display:block;" />';
-          one += '</td></tr></table>';
-          one += '<table style="' + pdfPageStyle + 'margin-top:12px;"><tr><td style="vertical-align:top;padding-right:16px;">';
-          one += '<div style="line-height:1.8;">';
-          one += '<div>客戶姓名：' + escapeHtml(p.name || '') + '</div>';
-          if (storeName) one += '<div>取貨門市：' + escapeHtml(storeName) + '</div>';
-          if (storeAddr) one += '<div>門市地址：' + escapeHtml(storeAddr) + '</div>';
-          one += '</div></td><td style="vertical-align:top;width:220px;">';
-          one += '<div style="' + pdfBoxBorder + '">';
-          one += '<div style="text-align:right;margin-bottom:4px;">訂單編號：' + escapeHtml(orderId) + '</div>';
-          one += '<div style="text-align:right;margin-bottom:4px;">預購日期：' + escapeHtml(dateStr) + '</div>';
-          if (shipDateStr) one += '<div style="text-align:right;">出貨日期：' + escapeHtml(shipDateStr) + '</div>';
-          one += '</div></td></tr></table>';
-          one += '<table style="' + pdfPageStyle + 'margin-top:12px;width:100%;"><thead><tr>';
-          one += '<th style="' + pdfThStyle + 'width:50px;">編號</th><th style="' + pdfThStyle + '">品項</th><th style="' + pdfThStyle + 'width:70px;">數量</th><th style="' + pdfThStyle + 'width:80px;">單價</th><th style="' + pdfThStyle + 'width:80px;">金額</th></tr></thead><tbody>';
-          items.forEach(function (it, idx) {
-            var unitPrice = (it.price != null && !isNaN(it.price)) ? it.price : 0;
-            var qty = (it.qty != null && !isNaN(it.qty)) ? it.qty : 0;
-            var amount = unitPrice * qty;
-            one += '<tr><td style="' + pdfTdStyle + '">' + (idx + 1) + '</td><td style="' + pdfTdStyle + '">' + escapeHtml(it.name || '') + '</td><td style="' + pdfTdStyle + '">' + qty + '</td><td style="' + pdfTdStyle + '">$' + unitPrice + '</td><td style="' + pdfTdStyle + '">$' + amount + '</td></tr>';
-          });
-          one += '</tbody></table>';
-          one += '<table style="' + pdfPageStyle + 'margin-top:12px;"><tr><td style="vertical-align:top;width:55%;">';
-          one += '<div style="background:#f9e076;color:#000;padding:4px 10px;font-weight:bold;width:fit-content;margin-bottom:4px;">備註</div>';
-          one += '<div style="' + pdfBoxBorder + 'min-height:60px;">訂金：NT$' + paid + (dateStr ? ' (' + escapeHtml(dateStr) + ')' : '') + '</div>';
-          one += '</td><td style="vertical-align:top;text-align:right;">';
-          one += '<table style="margin-left:auto;border-collapse:collapse;font-size:11pt;">';
-          one += '<tr><td style="padding:4px 12px 4px 0;border-bottom:1px solid #ddd;">小計</td><td style="padding:4px 0;border-bottom:1px solid #ddd;">$' + subtotal + '</td></tr>';
-          one += '<tr><td style="padding:4px 12px 4px 0;border-bottom:1px solid #ddd;">預購訂金</td><td style="padding:4px 0;border-bottom:1px solid #ddd;">$' + paid + '</td></tr>';
-          one += '<tr><td style="padding:4px 12px 4px 0;border-bottom:1px solid #ddd;">折扣</td><td style="padding:4px 0;border-bottom:1px solid #ddd;">—</td></tr>';
-          one += '<tr><td style="padding:4px 12px 4px 0;border-bottom:1px solid #ddd;">優惠</td><td style="padding:4px 0;border-bottom:1px solid #ddd;">—</td></tr>';
-          one += '<tr><td style="padding:4px 12px 4px 0;border-bottom:1px solid #ddd;">運費</td><td style="padding:4px 0;border-bottom:1px solid #ddd;">' + (ship > 0 ? '$' + ship : '—') + '</td></tr>';
-          one += '<tr><td style="padding:4px 12px 4px 0;border-bottom:1px solid #ddd;">補款</td><td style="padding:4px 0;border-bottom:1px solid #ddd;">$' + supplement + '</td></tr>';
-          one += '<tr><td style="padding:6px 12px 4px 0;">金額</td><td style="padding:6px 0 4px 0;">$' + total + '</td></tr></table></td></tr></table>';
-          one += '</div>';
-          pageHtmls.push(one);
+          var itemLines = items.map(function (it, i) {
+            var pricePart = (it.price != null && !isNaN(it.price)) ? ' $' + it.price : '';
+            return (i + 1) + '、' + it.name + pricePart + '×' + it.qty;
+          }).join('\n');
+          var totalQty = items.reduce(function (sum, it) { return sum + (it.qty || 0); }, 0);
+          var subtotal = (p.total != null ? p.total : 0);
+          var shipAmt = (p.shipping != null ? p.shipping : shippingNum);
+          var totalWithShip = subtotal + shipAmt;
+          var originalLine = originalOrderIdStr ? '\n🔎 原訂單查詢碼：' + originalOrderIdStr + '（供對照）' : '';
+          var addonTitleLine = addonTitleStr ? '\n🏷️ 加購團名：' + addonTitleStr : '';
+          var addonFirstLine = '✨ 加購訂單通知' + (addonTitleStr ? '（' + addonTitleStr + '）' : '');
+          var block = addonFirstLine + '\n📅 加購日期：' + dateStr + addonTitleLine + originalLine + '\n（@' + (p.name || '') + '）的加購內容如下：\n\n🛒加購款式：\n\n' + (itemLines || '—') + '\n\n數量：共 ' + totalQty + ' 款\n加購小計：NT$' + subtotal + '\n賣貨便運費：NT$' + shipAmt + '（與原訂單合併寄送時可免）\n\n🚚待結清金額：NT$' + totalWithShip + '\n\n📎 感謝您的加購與耐心等候🙂';
+          addonBlocksAll.push(block);
         });
-
-        var btn = this;
-        var origText = btn.textContent;
-        btn.textContent = '產生中…';
-        btn.disabled = true;
-        var filename = (title.replace(/[/\\?%*:|"<>]/g, '_') || '購買明細') + '_購買明細.pdf';
-        function cleanup() {
-          var w = document.getElementById('pdfTempWrap');
-          if (w && w.parentNode) w.parentNode.removeChild(w);
-          btn.textContent = origText;
-          btn.disabled = false;
-        }
-
-        function waitForImgs(container) {
-          var imgs = container.querySelectorAll('img');
-          var arr = Array.prototype.map.call(imgs, function (img) {
-            if (img.complete) return Promise.resolve();
-            return new Promise(function (resolve) {
-              img.onload = resolve;
-              img.onerror = resolve;
-              setTimeout(resolve, 5000);
-            });
-          });
-          return Promise.all(arr);
-        }
-
-        function doSheetWrite() {
-          var sheetWriteOnPdf = document.getElementById('optSheetWriteOnPdf') && document.getElementById('optSheetWriteOnPdf').checked;
-          var sheetUrl = (document.getElementById('optSheetUrl') && document.getElementById('optSheetUrl').value.trim()) || '';
-          if (sheetWriteOnPdf && sheetUrl && data) {
-            var built = buildSheetDataFromPdfData(data);
-            if (built.rows.length > 0) {
-              var payload = { title: built.title, header: built.header, rows: built.rows };
-              fetch(sheetUrl, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain;charset=utf-8' } }).catch(function () {});
-            }
-          }
-        }
-
-        var JSPDF = (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : (window.jsPDF || null);
-        var hasHtml2Canvas = typeof html2canvas === 'function';
-        if (!JSPDF || !hasHtml2Canvas) {
-          cleanup();
-          alert('產生 PDF 時發生錯誤：未載入 html2canvas 或 jspdf');
-          return;
-        }
-
-        (function runPage(idx, pdfSoFar) {
-          if (idx >= pageHtmls.length) {
-            if (pdfSoFar) pdfSoFar.save(filename);
-            cleanup();
-            doSheetWrite();
-            return;
-          }
-          var wrap = document.createElement('div');
-          wrap.id = 'pdfTempWrap';
-          wrap.setAttribute('style', 'position:fixed;left:0;top:0;width:794px;height:1123px;overflow:visible;background:#fff;padding:24px;box-sizing:border-box;z-index:99999;font-family:Microsoft JhengHei,sans-serif;');
-          wrap.innerHTML = pageHtmls[idx];
-          document.body.appendChild(wrap);
-
-          waitForImgs(wrap).then(function () {
-            return new Promise(function (r) { requestAnimationFrame(function () { setTimeout(r, 700); }); });
-          }).then(function () {
-            var el = document.getElementById('pdfTempWrap');
-            if (!el) { cleanup(); return; }
-            el.scrollIntoView({ block: 'start', behavior: 'auto' });
-            html2canvas(el, { scale: 1.5, useCORS: true, logging: false }).then(function (canvas) {
-              var imgData = canvas.toDataURL('image/jpeg', 0.92);
-              if (el.parentNode) el.parentNode.removeChild(el);
-              var pdf;
-              if (idx === 0) {
-                pdf = new JSPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
-                pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
-              } else {
-                pdfSoFar.addPage('a4', 'portrait');
-                pdfSoFar.addImage(imgData, 'JPEG', 0, 0, 210, 297);
-                pdf = pdfSoFar;
-              }
-              runPage(idx + 1, pdf);
-            }).catch(function (err) {
-              if (el.parentNode) el.parentNode.removeChild(el);
-              cleanup();
-              console.error(err);
-              alert('產生 PDF 時發生錯誤，請再試一次');
-            });
-          }).catch(function (err) {
-            cleanup();
-            console.error(err);
-            alert('產生 PDF 時發生錯誤，請再試一次');
-          });
-        })(0, null);
+        var text = addonBlocksAll.join('\n\n---\n\n');
+        navigator.clipboard.writeText(text).then(function () {
+          copyAddonBtn.textContent = '✓ 已複製！可貼到 LINE 傳給客人';
+          setTimeout(function () {
+            copyAddonBtn.textContent = '📋 一鍵複製加購明細';
+          }, 2000);
+        }).catch(function () {
+          alert('無法複製，請手動選取複製');
+        });
       });
 
       function escapeHtml(s) {
