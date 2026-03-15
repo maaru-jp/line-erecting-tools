@@ -1074,7 +1074,7 @@
           var originalLine = originalOrderIdStr ? '\n🔎 原訂單查詢碼：' + originalOrderIdStr + '（供對照）' : '';
           var addonTitleLine = addonTitleStr ? '\n🏷️ 加購團名：' + addonTitleStr : '';
           var addonFirstLine = '✨ 加購訂單通知' + (addonTitleStr ? '（' + addonTitleStr + '）' : '');
-          var block = addonFirstLine + '\n📅 加購日期：' + dateStr + addonTitleLine + originalLine + '\n（@' + (p.name || '') + '）的加購內容如下：\n\n🛒加購款式：\n\n' + (itemLines || '—') + '\n\n數量：共 ' + totalQty + ' 款\n加購小計：NT$' + subtotal + '\n賣貨便運費：NT$' + shipAmt + '（與原訂單合併寄送時可免）\n\n🚚待結清金額：NT$' + totalWithShip + '\n\n📎 感謝您的加購與耐心等候🙂';
+          var block = addonFirstLine + '\n📅 加購日期：' + dateStr + addonTitleLine + originalLine + '\n（@' + (p.name || '') + '）的加購內容如下：\n\n🛒加購款式：\n\n' + (itemLines || '—') + '\n\n數量：共 ' + totalQty + ' 款\n加購小計：NT$' + subtotal + '\n賣貨便運費：NT$' + shipAmt + '（與原訂單合併寄送時可免）\n\n🚚待結清金額：NT$' + totalWithShip + '\n\n😉 感謝您的加購與耐心等候🙂';
           addonBlocksAll.push(block);
         });
         window._lastAddonTemplateCopyText = addonBlocksAll.join('\n\n---\n\n');
