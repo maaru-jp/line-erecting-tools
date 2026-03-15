@@ -1053,7 +1053,7 @@
           var orderId = padOrderId(orderIdNum + idx);
           var depositLine = '訂金：NT$' + paid + (paid > 0 && dateStr ? '（' + dateStr + '已收）' : '');
           var shipAmt = (p.shipping != null ? p.shipping : shippingNum);
-          var block = '✨ 訂單成立通知\n📅 訂單成立日期：' + dateStr + '\n🔎 訂單查詢碼：ORD' + orderId + '\n（@' + (p.name || '') + ') 的訂單如下：\n\n🛒 預購款式：\n\n' + (itemLines || '—') + '\n\n數量：共 ' + totalQty + ' 款\n總金額：NT$' + total + '\n' + depositLine + '\n\n🚚 物流費用\n賣貨便運費：NT$' + shipAmt + '\n\n🚚 待貨到結清金額：\n      NT$ ' + supplementAmt + '\n=（$' + total + '-$' + paid + ')\n\n📎 感謝您的訂購與耐心等候🙂';
+          var block = '✨ 訂單成立通知\n📅 訂單成立日期：' + dateStr + '\n🔎 訂單查詢碼：ORD' + orderId + '\n（@' + (p.name || '') + ') 的訂單如下：\n\n🛒 預購款式：\n\n' + (itemLines || '—') + '\n\n數量：共 ' + totalQty + ' 款\n總金額：NT$' + total + '\n' + depositLine + '\n\n🚚 物流費用\n賣貨便運費：NT$' + shipAmt + '\n\n🚚 待貨到結清金額：\n      NT$ ' + supplementAmt + '\n=（$' + total + '-$' + paid + ')\n\n😉 感謝您的訂購與耐心等候🙂';
           fullBlocksAll.push(block);
         });
         window._lastFullTemplateCopyText = fullBlocksAll.join('\n\n---\n\n');
