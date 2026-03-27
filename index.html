@@ -1025,7 +1025,7 @@
         }
 
         // 給客人明細（完整版）：依「給客人明細」設定為「每一位」客人產生一則明細，供一鍵複製
-        var title = (document.getElementById('optTitle') && document.getElementById('optTitle').value.trim()) || '訂單明細';
+        var groupTitle = (document.getElementById('optTitle') && document.getElementById('optTitle').value.trim()) || '';
         var dateEl = document.getElementById('optDate');
         var dateVal = dateEl && dateEl.value ? dateEl.value.trim() : '';
         var dateStr = dateVal ? dateVal.replace(/-/g, '/') : new Date().toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '/');
@@ -1053,13 +1053,17 @@
           var orderId = padOrderId(orderIdNum + idx);
           var depositLine = '訂金：NT$' + paid + (paid > 0 && dateStr ? '（' + dateStr + '已收）' : '');
           var shipAmt = (p.shipping != null ? p.shipping : shippingNum);
-          var block = '✨ 訂單成立通知\n📅 訂單成立日期：' + dateStr + '\n🔎 訂單查詢碼：ORD' + orderId + '\n（@' + (p.name || '') + ') 的訂單如下：\n\n🛒 預購款式：\n\n' + (itemLines || '—') + '\n\n數量：共 ' + totalQty + ' 款\n總金額：NT$' + total + '\n' + depositLine + '\n\n🚚 物流費用\n賣貨便運費：NT$' + shipAmt + '\n\n🚚 待貨到結清金額：\n      NT$ ' + supplementAmt + '\n=（$' + total + '-$' + paid + ')\n\n😉 感謝您的訂購與耐心等候🙂';
+          var groupTitleLine = groupTitle ? '\n🏷️ 團名：' + groupTitle : '';
+          var block = '✨ 訂單成立通知\n📅 訂單成立日期：' + dateStr + groupTitleLine + '\n🔎 訂單查詢碼：ORD' + orderId + '\n（@' + (p.name || '') + ') 的訂單如下：\n\n🛒 預購款式：\n\n' + (itemLines || '—') + '\n\n數量：共 ' + totalQty + ' 款\n總金額：NT$' + total + '\n' + depositLine + '\n\n🚚 物流費用\n賣貨便運費：NT$' + shipAmt + '\n\n🚚 待貨到結清金額：\n      NT$ ' + supplementAmt + '\n=（$' + total + '-$' + paid + ')\n\n😉 感謝您的訂購與耐心等候🙂';
           fullBlocksAll.push(block);
         });
         window._lastFullTemplateCopyText = fullBlocksAll.join('\n\n---\n\n');
 
         var originalOrderIdStr = (document.getElementById('optOriginalOrderId') && document.getElementById('optOriginalOrderId').value.trim()) || '';
         var addonTitleStr = (document.getElementById('optAddonTitle') && document.getElementById('optAddonTitle').value.trim()) || '';
+        var addonDepositStr = (document.getElementById('optDeposit') && document.getElementById('optDeposit').value.trim()) || '';
+        var addonDeposit = addonDepositStr !== '' ? parseInt(addonDepositStr, 10) : 0;
+        if (isNaN(addonDeposit)) addonDeposit = 0;
         var addonBlocksAll = [];
         perPerson.forEach(function (p, idx) {
           var items = (p.items || []);
@@ -1071,10 +1075,11 @@
           var subtotal = (p.total != null ? p.total : 0);
           var shipAmt = (p.shipping != null ? p.shipping : shippingNum);
           var totalWithShip = subtotal + shipAmt;
+          var due = Math.max(0, totalWithShip - addonDeposit);
           var originalLine = originalOrderIdStr ? '\n🔎 原訂單查詢碼：' + originalOrderIdStr + '（供對照）' : '';
           var addonTitleLine = addonTitleStr ? '\n🏷️ 加購團名：' + addonTitleStr : '';
           var addonFirstLine = '✨ 加購訂單通知' + (addonTitleStr ? '（' + addonTitleStr + '）' : '');
-          var block = addonFirstLine + '\n📅 加購日期：' + dateStr + addonTitleLine + originalLine + '\n（@' + (p.name || '') + '）的加購內容如下：\n\n🛒加購款式：\n\n' + (itemLines || '—') + '\n\n數量：共 ' + totalQty + ' 款\n加購小計：NT$' + subtotal + '\n賣貨便運費：NT$' + shipAmt + '（與原訂單合併寄送時可免）\n\n🚚待結清金額：NT$' + totalWithShip + '\n\n😉 感謝您的加購與耐心等候🙂';
+          var block = addonFirstLine + '\n📅 加購日期：' + dateStr + addonTitleLine + originalLine + '\n（@' + (p.name || '') + '）的加購內容如下：\n\n🛒加購款式：\n\n' + (itemLines || '—') + '\n\n數量：共 ' + totalQty + ' 款\n加購小計：NT$' + subtotal + '\n訂金：NT$' + addonDeposit + '\n賣貨便運費：NT$' + shipAmt + '（若到貨選擇與原訂單合併寄送時可免）\n\n🚚待結清金額：NT$' + due + '\n=（$' + totalWithShip + '-$' + addonDeposit + ')\n\n😉 感謝您的加購與耐心等候🙂';
           addonBlocksAll.push(block);
         });
         window._lastAddonTemplateCopyText = addonBlocksAll.join('\n\n---\n\n');
@@ -1229,6 +1234,9 @@
         var dateStr = dateVal ? dateVal.replace(/-/g, '/') : new Date().toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '/');
         var originalOrderIdStr = (document.getElementById('optOriginalOrderId') && document.getElementById('optOriginalOrderId').value.trim()) || '';
         var addonTitleStr = (document.getElementById('optAddonTitle') && document.getElementById('optAddonTitle').value.trim()) || '';
+        var addonDepositStr = (document.getElementById('optDeposit') && document.getElementById('optDeposit').value.trim()) || '';
+        var addonDeposit = addonDepositStr !== '' ? parseInt(addonDepositStr, 10) : 0;
+        if (isNaN(addonDeposit)) addonDeposit = 0;
         var namesList = perPerson.map(function (p) { return p.name || ''; }).join('、');
         var confirmMsg = '本批加購客人：' + namesList;
         if (originalOrderIdStr) {
@@ -1247,10 +1255,11 @@
           var subtotal = (p.total != null ? p.total : 0);
           var shipAmt = (p.shipping != null ? p.shipping : shippingNum);
           var totalWithShip = subtotal + shipAmt;
+          var due = Math.max(0, totalWithShip - addonDeposit);
           var originalLine = originalOrderIdStr ? '\n🔎 原訂單查詢碼：' + originalOrderIdStr + '（供對照）' : '';
           var addonTitleLine = addonTitleStr ? '\n🏷️ 加購團名：' + addonTitleStr : '';
           var addonFirstLine = '✨ 加購訂單通知' + (addonTitleStr ? '（' + addonTitleStr + '）' : '');
-          var block = addonFirstLine + '\n📅 加購日期：' + dateStr + addonTitleLine + originalLine + '\n（@' + (p.name || '') + '）的加購內容如下：\n\n🛒加購款式：\n\n' + (itemLines || '—') + '\n\n數量：共 ' + totalQty + ' 款\n加購小計：NT$' + subtotal + '\n賣貨便運費：NT$' + shipAmt + '（與原訂單合併寄送時可免）\n\n🚚待結清金額：NT$' + totalWithShip + '\n\n📎 感謝您的加購與耐心等候🙂';
+          var block = addonFirstLine + '\n📅 加購日期：' + dateStr + addonTitleLine + originalLine + '\n（@' + (p.name || '') + '）的加購內容如下：\n\n🛒加購款式：\n\n' + (itemLines || '—') + '\n\n數量：共 ' + totalQty + ' 款\n加購小計：NT$' + subtotal + '\n訂金：NT$' + addonDeposit + '\n賣貨便運費：NT$' + shipAmt + '（若到貨選擇與原訂單合併寄送時可免）\n\n🚚待結清金額：NT$' + due + '\n=（$' + totalWithShip + '-$' + addonDeposit + ')\n\n📎 感謝您的加購與耐心等候🙂';
           addonBlocksAll.push(block);
         });
         var text = addonBlocksAll.join('\n\n---\n\n');
