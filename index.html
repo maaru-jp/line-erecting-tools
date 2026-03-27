@@ -1208,8 +1208,46 @@
         }).catch(function () { alert('無法複製'); });
       });
       document.getElementById('copyFullTemplateBtn').addEventListener('click', function () {
-        const text = window._lastFullTemplateCopyText || '';
-        if (!text) return;
+        var data = window._lastPdfData;
+        if (!data || !data.perPerson || data.perPerson.length === 0) {
+          alert('請先貼上喊單並按「開始統計」');
+          return;
+        }
+        var perPerson = data.perPerson;
+        var shippingNum = data.shippingNum != null ? data.shippingNum : 0;
+        var groupTitle = (document.getElementById('optTitle') && document.getElementById('optTitle').value.trim()) || '';
+        var dateEl = document.getElementById('optDate');
+        var dateVal = dateEl && dateEl.value ? dateEl.value.trim() : '';
+        var dateStr = dateVal ? dateVal.replace(/-/g, '/') : new Date().toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '/');
+        var orderIdStart = (document.getElementById('optOrderId') && document.getElementById('optOrderId').value.trim()) || '00100';
+        var defaultDeposit = (document.getElementById('optDeposit') && document.getElementById('optDeposit').value.trim()) || '';
+        var orderIdNum = parseInt(orderIdStart.replace(/\D/g, ''), 10) || 100;
+        var orderIdPad = Math.max(5, (orderIdStart.replace(/\D/g, '') || '').length);
+        function padOrderIdNow(n) {
+          var s = String(n);
+          while (s.length < orderIdPad) s = '0' + s;
+          return s;
+        }
+        var blocks = [];
+        perPerson.forEach(function (p, idx) {
+          var items = (p.items || []);
+          var itemLines = items.map(function (it, i) {
+            var pricePart = (it.price != null && !isNaN(it.price)) ? ' $' + it.price : '';
+            return (i + 1) + '、' + it.name + pricePart + '×' + it.qty;
+          }).join('\n');
+          var totalQty = items.reduce(function (sum, it) { return sum + (it.qty || 0); }, 0);
+          var total = (p.totalWithShipping != null ? p.totalWithShipping : (p.total != null ? p.total : 0));
+          var paid = (p.paid != null ? p.paid : (defaultDeposit !== '' ? parseInt(defaultDeposit, 10) : 0));
+          if (isNaN(paid)) paid = 0;
+          var supplementAmt = (p.supplement != null ? p.supplement : Math.max(0, total - paid));
+          var shipAmt = (p.shipping != null ? p.shipping : shippingNum);
+          var orderId = padOrderIdNow(orderIdNum + idx);
+          var depositLine = '訂金：NT$' + paid + (paid > 0 && dateStr ? '（' + dateStr + '已收）' : '');
+          var groupTitleLine = groupTitle ? '\n🏷️ 團名：' + groupTitle : '';
+          var block = '✨ 訂單成立通知\n📅 訂單成立日期：' + dateStr + groupTitleLine + '\n🔎 訂單查詢碼：ORD' + orderId + '\n（@' + (p.name || '') + ') 的訂單如下：\n\n🛒 預購款式：\n\n' + (itemLines || '—') + '\n\n數量：共 ' + totalQty + ' 款\n總金額：NT$' + total + '\n' + depositLine + '\n\n🚚 物流費用\n賣貨便運費：NT$' + shipAmt + '\n\n🚚 待貨到結清金額：\n      NT$ ' + supplementAmt + '\n=（$' + total + '-$' + paid + ')\n\n😉 感謝您的訂購與耐心等候🙂';
+          blocks.push(block);
+        });
+        var text = blocks.join('\n\n---\n\n');
         navigator.clipboard.writeText(text).then(function () {
           this.textContent = '✓ 已複製！可貼到 LINE 傳給客人';
           var btn = this;
